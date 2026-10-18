@@ -1,0 +1,35 @@
+{
+  "name": "ausbildung-preparation-portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-grade Ausbildung Preparation Portal with modular monolith backend and Next.js frontend",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "keywords": [
+    "ausbildung",
+    "germany",
+    "german-learning",
+    "nextjs",
+    "nestjs",
+    "prisma",
+    "postgresql",
+    "webrtc"
+  ],
+  "author": "Ausbildung Preparation Team",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
