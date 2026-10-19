@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleType {
+  STUDENT
+  INSTRUCTOR
+  MODERATOR
+  ADMIN
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id                      String                   @id @default(uuid())
+  email                   String                   @unique
+  passwordHash            String                   @map("password_hash")
+  status                  AccountStatus            @default(ACTIVE)
+  emailVerified           Boolean                  @default(false) @map("email_verified")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  deletedAt               DateTime?                @map("deleted_at")
+
+  profile                 UserProfile?
+  roles                   UserRole[]
+  refreshTokens           RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  auditLogs               AuditLog[]
+  notificationPreference  NotificationPreference?
+
+  @@map("users")
+}
+
+model Role {
+  id          String     @id @default(uuid())
+  name        RoleType   @unique
+  description String?
+
+  userRoles   UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId     String   @map("user_id")
+  roleId     String   @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model UserProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique @map("user_id")
+  firstName             String?  @map("first_name")
+  lastName              String?  @map("last_name")
+  preferredLanguage     String   @default("en") @map("preferred_language")
+  targetAusbildungField String?  @map("target_ausbildung_field")
+  phoneNumber           String?  @map("phone_number")
+  avatarUrl             String?  @map("avatar_url")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  tokenHash  String   @unique @map("token_hash")
+  clientIp   String?  @map("client_ip")
+  userAgent  String?  @map("user_agent")
+  isRevoked  Boolean  @default(false) @map("is_revoked")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model NotificationPreference {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  emailNotifications Boolean  @default(true) @map("email_notifications")
+  jobAlerts          Boolean  @default(true) @map("job_alerts")
+  speakingInvites    Boolean  @default(true) @map("speaking_invites")
+  marketing          Boolean  @default(false)
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?  @map("actor_id")
+  action       String
+  targetEntity String   @map("target_entity")
+  targetId     String?  @map("target_id")
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@map("audit_logs")
+}
