@@ -12,6 +12,7 @@ out/
 
 # NestJS build output
 dist/
+*.tsbuildinfo
 
 # Prisma
 prisma/*.db

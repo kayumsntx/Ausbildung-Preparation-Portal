@@ -23,6 +23,22 @@ enum AccountStatus {
   SUSPENDED
 }
 
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum ExerciseType {
+  READING
+  LISTENING
+  WRITING
+  FILL_IN_BLANK
+}
+
 model User {
   id                      String                   @id @default(uuid())
   email                   String                   @unique
@@ -40,6 +56,9 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   auditLogs               AuditLog[]
   notificationPreference  NotificationPreference?
+  quizAttempts            QuizAttempt[]
+  lessonProgress          LessonProgress[]
+  bookmarks               UserBookmark[]
 
   @@map("users")
 }
@@ -155,4 +174,205 @@ model AuditLog {
   @@index([actorId])
   @@index([action])
   @@map("audit_logs")
+}
+
+// -----------------------------------------------------------------------------
+// German Learning Curriculum Entities (Phase 3)
+// -----------------------------------------------------------------------------
+
+model LearningLevel {
+  id            String          @id @default(uuid())
+  code          CefrLevel       @unique
+  title         String
+  description   String?
+  sequenceOrder Int             @map("sequence_order")
+
+  modules       LearningModule[]
+
+  @@map("learning_levels")
+}
+
+model LearningModule {
+  id            String        @id @default(uuid())
+  levelId       String        @map("level_id")
+  title         String
+  description   String?
+  sequenceOrder Int           @map("sequence_order")
+
+  level         LearningLevel @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
+
+  @@index([levelId])
+  @@map("learning_modules")
+}
+
+model Lesson {
+  id               String               @id @default(uuid())
+  moduleId         String               @map("module_id")
+  slug             String               @unique
+  titleDe          String               @map("title_de")
+  grammarNotesDe   String?              @map("grammar_notes_de")
+  estimatedMinutes Int                  @default(15) @map("estimated_minutes")
+  sequenceOrder    Int                  @map("sequence_order")
+  coinReward       Int                  @default(10) @map("coin_reward")
+
+  module           LearningModule       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  translations     LessonTranslation[]
+  vocabulary       VocabularyItem[]
+  exercises        Exercise[]
+  quizQuestions    QuizQuestion[]
+  progress         LessonProgress[]
+  bookmarks        UserBookmark[]
+
+  @@index([moduleId])
+  @@map("lessons")
+}
+
+model LessonTranslation {
+  id            String   @id @default(uuid())
+  lessonId      String   @map("lesson_id")
+  languageCode  String   @map("language_code") // "bn", "en", "de"
+  title         String
+  summary       String?
+  grammarNotes  String?  @map("grammar_notes") // Bengali/English explanation of German grammar rule
+  content       Json?
+
+  lesson        Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, languageCode])
+  @@map("lesson_translations")
+}
+
+model VocabularyItem {
+  id                         String         @id @default(uuid())
+  lessonId                   String?        @map("lesson_id")
+  word                       String
+  article                    String?        // "der", "die", "das", or null
+  pluralForm                 String?        @map("plural_form")
+  ipaPronunciation           String?        @map("ipa_pronunciation")
+  audioUrl                   String?        @map("audio_url")
+  partOfSpeech               String?        @map("part_of_speech")
+  translations               Json           // { "bn": "...", "en": "..." }
+  exampleSentenceDe          String?        @map("example_sentence_de")
+  exampleSentenceTranslation Json?          @map("example_sentence_translation")
+
+  lesson                     Lesson?        @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  bookmarks                  UserBookmark[]
+
+  @@index([lessonId])
+  @@index([word])
+  @@map("vocabulary_items")
+}
+
+model Exercise {
+  id            String       @id @default(uuid())
+  lessonId      String       @map("lesson_id")
+  type          ExerciseType
+  promptDe      String       @map("prompt_de")
+  instructions  Json?        // { "bn": "...", "en": "..." }
+  content       Json         // Passage, audio URL, prompts, gaps
+  correctAnswer String?      @map("correct_answer")
+  sequenceOrder Int          @map("sequence_order")
+
+  lesson        Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("exercises")
+}
+
+model QuizQuestion {
+  id                   String        @id @default(uuid())
+  lessonId             String        @map("lesson_id")
+  questionDe           String        @map("question_de")
+  questionTranslation  Json?         @map("question_translation")
+  explanationDe        String?       @map("explanation_de")
+  explanationTranslation Json?       @map("explanation_translation")
+  sequenceOrder        Int           @map("sequence_order")
+
+  lesson               Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  options              QuizOption[]
+  answers              QuizAnswer[]
+
+  @@index([lessonId])
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id                String       @id @default(uuid())
+  questionId        String       @map("question_id")
+  optionTextDe      String       @map("option_text_de")
+  optionTranslation Json?        @map("option_translation")
+  isCorrect         Boolean      @map("is_correct")
+  sequenceOrder     Int          @map("sequence_order")
+
+  question          QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("quiz_options")
+}
+
+model QuizAttempt {
+  id              String       @id @default(uuid())
+  userId          String       @map("user_id")
+  lessonId        String       @map("lesson_id")
+  totalQuestions  Int          @map("total_questions")
+  correctAnswers  Int          @map("correct_answers")
+  scorePercentage Int          @map("score_percentage")
+  passed          Boolean
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers         QuizAnswer[]
+
+  @@index([userId])
+  @@index([lessonId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id               String       @id @default(uuid())
+  attemptId        String       @map("attempt_id")
+  questionId       String       @map("question_id")
+  selectedOptionId String?      @map("selected_option_id")
+  isCorrect        Boolean      @map("is_correct")
+
+  attempt          QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@map("quiz_answers")
+}
+
+model LessonProgress {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  lessonId        String    @map("lesson_id")
+  isCompleted     Boolean   @default(false) @map("is_completed")
+  scorePercentage Int?      @map("score_percentage")
+  completedAt     DateTime? @map("completed_at")
+  lastAccessedAt  DateTime  @default(now()) @map("last_accessed_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson          Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@map("lesson_progress")
+}
+
+model UserBookmark {
+  id           String          @id @default(uuid())
+  userId       String          @map("user_id")
+  lessonId     String?         @map("lesson_id")
+  vocabularyId String?         @map("vocabulary_id")
+  notes        String?
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson       Lesson?         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  vocabulary   VocabularyItem? @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vocabularyId])
+  @@index([userId])
+  @@map("user_bookmarks")
 }
