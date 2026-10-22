@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Lock, User, GraduationCap, ArrowRight, Gift } from 'lucide-react';
+import { Mail, Lock, User, GraduationCap, ArrowRight, Gift, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -14,18 +14,71 @@ export default function RegisterPage() {
     agreeTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.agreeTerms) {
       alert('Please agree to the Terms of Service and Privacy Policy.');
       return;
     }
+
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    // Normalize API endpoint URL
+    const rawBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1').trim().replace(/\/+$/, '');
+    const apiUrl = rawBase.endsWith('/api/v1')
+      ? `${rawBase}/auth/register`
+      : `${rawBase}/api/v1/auth/register`;
+
+    // Split name into first and optional last name
+    const nameParts = formData.name.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+
+    const payload: Record<string, any> = {
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+      firstName: firstName || undefined,
+      lastName,
+      targetAusbildungField: formData.targetField,
+    };
+
+    if (formData.referralCode?.trim()) {
+      payload.referralCode = formData.referralCode.trim().toUpperCase();
+    }
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => null);
+      console.log('Registration API response:', data);
+
+      if (!response.ok) {
+        const message =
+          (Array.isArray(data?.message) ? data.message.join(', ') : data?.message) ||
+          data?.error?.message ||
+          data?.error ||
+          `Registration failed (Status ${response.status}). Please check your inputs and try again.`;
+        throw new Error(message);
+      }
+
+      setSuccessMessage('Registration successful! Please check your email to verify your account.');
+    } catch (err: any) {
+      console.error('Registration request error:', err);
+      setErrorMessage(err?.message || 'Unable to connect to the registration server. Please try again.');
+    } finally {
       setIsLoading(false);
-      alert('Phase 1 UI Shell: Full registration and email verification tokens will be wired in Phase 2.');
-    }, 600);
+    }
   };
 
   return (
@@ -47,6 +100,28 @@ export default function RegisterPage() {
         </div>
 
         <div className="p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg space-y-6">
+          {errorMessage && (
+            <div className="p-3.5 rounded-xl text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-relaxed">{errorMessage}</div>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="p-4 rounded-xl text-xs bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-2">
+                <p className="font-semibold leading-relaxed">{successMessage}</p>
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400 underline hover:no-underline"
+                >
+                  Proceed to Sign In <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -163,8 +238,17 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full py-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isLoading ? 'Creating Account...' : 'Complete Registration'}
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Complete Registration</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

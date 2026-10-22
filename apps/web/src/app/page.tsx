@@ -123,7 +123,7 @@ export default function HomePage() {
             { title: t.pathway.step5Title, desc: t.pathway.step5Desc, step: '05', icon: Award },
           ].map((item, idx) => (
             <div
-              key={idx}
+              key={item.step || `pathway-step-${idx}`}
               className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between group"
             >
               <div className="space-y-3">
@@ -212,7 +212,7 @@ export default function HomePage() {
             },
           ].map((feat, i) => (
             <Link
-              key={i}
+              key={feat.href || `feature-${i}`}
               href={feat.href}
               className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500/40 dark:hover:border-blue-500/40 shadow-xs hover:shadow-lg transition-all group flex flex-col justify-between"
             >

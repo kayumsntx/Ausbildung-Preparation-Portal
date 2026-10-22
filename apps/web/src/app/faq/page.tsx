@@ -50,7 +50,7 @@ export default function FaqPage() {
 
           return (
             <div
-              key={idx}
+              key={faq.questionEn || `faq-${idx}`}
               className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs transition-all"
             >
               <button
