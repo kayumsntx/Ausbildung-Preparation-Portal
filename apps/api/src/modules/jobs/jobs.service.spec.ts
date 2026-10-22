@@ -41,10 +41,10 @@ describe('JobsService Integration & Pipeline Tests', () => {
     expect(allJobs.items).toBeDefined();
     expect(allJobs.items.length).toBeGreaterThanOrEqual(6);
 
-    const berlinJobs = await jobsService.searchJobs({ city: 'Berlin' }, testUserId);
+    const berlinJobs = await jobsService.searchJobs({ page: 1, limit: 10, city: 'Berlin' }, testUserId);
     expect(berlinJobs.items.some((j) => j.city.toLowerCase().includes('berlin'))).toBe(true);
 
-    const itJobs = await jobsService.searchJobs({ category: 'IT & Software' }, testUserId);
+    const itJobs = await jobsService.searchJobs({ page: 1, limit: 10, category: 'IT & Software' }, testUserId);
     expect(itJobs.items.some((j) => j.employer.includes('SAP'))).toBe(true);
   });
 

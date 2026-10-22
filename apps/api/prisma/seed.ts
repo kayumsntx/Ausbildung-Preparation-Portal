@@ -1338,6 +1338,66 @@ async function main() {
   }
   console.log('✅ LMS Courses, Modules & Lessons seeded (4 specialized vocational courses).');
 
+  // 10. Seed Default Visa & Interview Checklists (Phase 6)
+  if (existingAdmin) {
+    const checklistItems = [
+      {
+        category: 'EMBASSY_VISA',
+        title: 'Gültiger Reisepass (mindestens 12 Monate Gültigkeit)',
+        description: 'Reisepass mit mindestens zwei leeren Seiten für das nationale Visum D.',
+        sequenceOrder: 1,
+      },
+      {
+        category: 'EMBASSY_VISA',
+        title: 'Ausbildungsvertrag im Original (IHK/HWK eingetragen)',
+        description: 'Von Betrieb und Auszubildendem unterschriebener Vertrag inkl. betrieblichem Ausbildungsplan.',
+        sequenceOrder: 2,
+      },
+      {
+        category: 'EMBASSY_VISA',
+        title: 'Zertifizierter Deutschnachweis (B1 oder B2 Goethe/telc)',
+        description: 'Zertifikat nicht älter als 12 Monate für reibungslose Visumerteilung.',
+        sequenceOrder: 3,
+      },
+      {
+        category: 'EMBASSY_VISA',
+        title: 'Finanzierungsnachweis / Sperrkonto',
+        description: 'Nachweis über Lebenshaltungskosten, falls Ausbildungsvergütung unter Botschaftsschwellenwert.',
+        sequenceOrder: 4,
+      },
+      {
+        category: 'INTERVIEW_PREP',
+        title: 'DIN 5008 Lebenslauf & Anschreiben auf Deutsch bereithalten',
+        description: 'Tabellarischer Lebenslauf mit Foto und formales Anschreiben.',
+        sequenceOrder: 1,
+      },
+      {
+        category: 'INTERVIEW_PREP',
+        title: 'Selbstpräsentation auf Deutsch vorbereiten',
+        description: 'Flüssige 2-Minuten-Vorstellung: Wer bin ich? Warum dieser Beruf? Warum dieses Unternehmen?',
+        sequenceOrder: 2,
+      },
+    ];
+
+    for (const item of checklistItems) {
+      const existing = await prisma.applicationChecklist.findFirst({
+        where: { userId: existingAdmin.id, title: item.title },
+      });
+      if (!existing) {
+        await prisma.applicationChecklist.create({
+          data: {
+            userId: existingAdmin.id,
+            category: item.category,
+            title: item.title,
+            description: item.description,
+            sequenceOrder: item.sequenceOrder,
+          },
+        });
+      }
+    }
+    console.log('✅ Default Visa & Interview Checklists seeded.');
+  }
+
   console.log('🎉 Database seeding completed successfully.');
 }
 

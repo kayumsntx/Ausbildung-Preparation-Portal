@@ -7,6 +7,7 @@ export interface TranslationSchema {
     jobSearch: string;
     courses: string;
     speaking: string;
+    toolkit: string;
     pricing: string;
     about: string;
     faq: string;
@@ -86,6 +87,7 @@ export const translations: Record<Locale, TranslationSchema> = {
       jobSearch: 'Ausbildung Jobs',
       courses: 'Courses',
       speaking: 'Speaking Practice',
+      toolkit: 'Application Toolkit',
       pricing: 'Coins & Pricing',
       about: 'About Us',
       faq: 'FAQ',
@@ -164,6 +166,7 @@ export const translations: Record<Locale, TranslationSchema> = {
       jobSearch: 'আউসবিল্ডুং চাকরি',
       courses: 'কোর্সসমূহ',
       speaking: 'স্পিকিং প্র্যাকটিস',
+      toolkit: 'আবেদন টুলকিট',
       pricing: 'কয়েন ও প্রাইসিং',
       about: 'আমাদের সম্পর্কে',
       faq: 'প্রশ্নোত্তর',
@@ -242,6 +245,7 @@ export const translations: Record<Locale, TranslationSchema> = {
       jobSearch: 'Ausbildungsplätze',
       courses: 'Fachkurse',
       speaking: 'Sprachpraxis',
+      toolkit: 'Bewerbungs-Toolkit',
       pricing: 'Coins & Preise',
       about: 'Über uns',
       faq: 'FAQ',

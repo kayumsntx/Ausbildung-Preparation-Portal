@@ -44,11 +44,11 @@ describe('CoursesService Integration & LMS Tests', () => {
     expect(allCourses.items).toBeDefined();
     expect(allCourses.items.length).toBeGreaterThanOrEqual(4);
 
-    const freeCourses = await coursesService.getCourses({ isFree: true }, testUserId);
+    const freeCourses = await coursesService.getCourses({ page: 1, limit: 10, isFree: true }, testUserId);
     expect(freeCourses.items.every((c) => c.isFree)).toBe(true);
 
     const medicalCourses = await coursesService.getCourses(
-      { category: 'Healthcare Terminology' },
+      { page: 1, limit: 10, category: 'Healthcare Terminology' },
       testUserId,
     );
     expect(medicalCourses.items.some((c) => c.slug.includes('medical-german'))).toBe(true);
@@ -87,9 +87,9 @@ describe('CoursesService Integration & LMS Tests', () => {
     expect(result.status).toBe(EnrollmentStatus.ACTIVE);
 
     // Re-enrollment idempotency check
-    const duplicate = await coursesService.enrollCourse(testUserId, freeCourse!.id, {
+    const duplicate = (await coursesService.enrollCourse(testUserId, freeCourse!.id, {
       paymentMethod: PaymentMethod.FREE,
-    });
+    })) as any;
     expect(duplicate.alreadyEnrolled).toBe(true);
   });
 
@@ -152,12 +152,12 @@ describe('CoursesService Integration & LMS Tests', () => {
     expect(lastResult!.progressPercentage).toBe(100);
     expect(lastResult!.status).toBe(EnrollmentStatus.COMPLETED);
     expect(lastResult!.certificate).toBeDefined();
-    expect(lastResult!.certificate.certificateCode).toContain('CERT-');
-    expect(lastResult!.certificate.verificationHash).toBeDefined();
+    expect(lastResult!.certificate!.certificateCode).toContain('CERT-');
+    expect(lastResult!.certificate!.verificationHash).toBeDefined();
 
     // Public Certificate Verification
     const verification = await coursesService.verifyCertificate(
-      lastResult!.certificate.certificateCode,
+      lastResult!.certificate!.certificateCode,
     );
     expect(verification.isValid).toBe(true);
     expect(verification.recipientName).toBe('Tanvir Hasan');

@@ -65,6 +65,10 @@ model User {
   certificates            Certificate[]
   orders                  Order[]
   instructorProfile       Instructor?
+  cvVersions              CvVersion[]
+  coverLetters            CoverLetter[]
+  userDocuments           UserDocument[]
+  checklists              ApplicationChecklist[]
 
   @@map("users")
 }
@@ -682,5 +686,92 @@ model Order {
   @@index([idempotencyKey])
   @@map("orders")
 }
+
+// -----------------------------------------------------------------------------
+// Application Toolkit: CV, Cover Letter & Documents (Phase 6)
+// -----------------------------------------------------------------------------
+
+model CvVersion {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  title          String   // e.g. "Pflegefachmann CV - Charité"
+  targetVocation String   @map("target_vocation") // e.g. "Pflegefachmann / Pflegefachfrau"
+  personalInfo   Json     @map("personal_info")   // { fullName, birthDate, birthPlace, nationality, address, phone, email, photoUrl }
+  education      Json     // Array of { startDate, endDate, institution, degree, city, country, description }
+  experience     Json     // Array of { startDate, endDate, company, role, city, country, tasks }
+  languageSkills Json     @map("language_skills") // Array of { language, level, certificate, description }
+  skills         Json     // Array of { category, items }
+  interests      Json?    // Array of string hobbies
+  locationDate   String?  @map("location_date")   // e.g. "Dhaka, 22. Oktober 2026"
+  isPrimary      Boolean  @default(false) @map("is_primary")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("cv_versions")
+}
+
+model CoverLetter {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  title          String   // e.g. "Anschreiben Charité Pflege 2027"
+  senderBlock    Json     @map("sender_block")    // { name, address, postalCodeCity, phone, email }
+  recipientBlock Json     @map("recipient_block") // { company, contactPerson, department, address, postalCodeCity }
+  dateLine       String   @map("date_line")       // e.g. "Dhaka, 22. Oktober 2026"
+  subjectLine    String   @map("subject_line")    // e.g. "Bewerbung um einen Ausbildungsplatz..."
+  salutation     String   // e.g. "Sehr geehrte Damen und Herren,"
+  bodyText       String   @map("body_text")       // Formal paragraphs formatted according to DIN 5008
+  signOff        String   @default("Mit freundlichen Grüßen") @map("sign_off")
+  enclosures     String?  @default("Anlagen: Lebenslauf, Zeugnisse, Sprachzertifikat B2")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("cover_letters")
+}
+
+model UserDocument {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  title      String   // e.g. "Goethe B2 Zertifikat"
+  category   String   // "LANGUAGE_CERTIFICATE", "SCHOOL_TRANSCRIPT", "PASSPORT", "WORK_REFERENCE", "OTHER"
+  fileName   String   @map("file_name")
+  fileSize   Int      @map("file_size") // in bytes
+  mimeType   String   @map("mime_type") // e.g. "application/pdf"
+  fileUrl    String   @map("file_url")
+  isVerified Boolean  @default(false) @map("is_verified")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@map("user_documents")
+}
+
+model ApplicationChecklist {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  category      String    // "EMBASSY_VISA", "INTERVIEW_PREP", "DOCUMENT_AUTHENTICATION"
+  title         String
+  description   String?
+  isCompleted   Boolean   @default(false) @map("is_completed")
+  dueDate       DateTime? @map("due_date")
+  sequenceOrder Int       @default(1) @map("sequence_order")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@map("application_checklists")
+}
+
 
 
