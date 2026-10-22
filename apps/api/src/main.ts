@@ -31,15 +31,57 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // CORS configuration
-  const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
-    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : ['http://localhost:3000'];
+  const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : [];
+
+  const defaultAllowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:4000',
+    'https://ausbildung-preparation-portal-app.onrender.com',
+    'https://ausbildung-preparation-portal.onrender.com',
+    'https://ausbildung-web.onrender.com',
+  ];
+
+  const allowedOriginsSet = new Set(
+    [...defaultAllowedOrigins, ...configuredOrigins].map((o) => o.replace(/\/+$/, '')),
+  );
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const cleanOrigin = origin.replace(/\/+$/, '');
+
+      // Check explicit allowed origins list
+      if (allowedOriginsSet.has(cleanOrigin) || allowedOriginsSet.has(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow any onrender origin belonging to this project (e.g., custom frontend deployment names)
+      if (/^https:\/\/ausbildung[a-z0-9-]*\.onrender\.com$/i.test(cleanOrigin)) {
+        return callback(null, true);
+      }
+
+      logger.warn(`CORS blocked request from origin: ${origin}`);
+      return callback(new Error(`CORS policy does not allow access from origin ${origin}`), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID', 'X-Refresh-Token'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Correlation-ID',
+      'X-Refresh-Token',
+      'Accept',
+    ],
+    exposedHeaders: ['X-Correlation-ID'],
   });
 
   // Global Versioned Prefix (exclude root '/' so Render health/status checks succeed)

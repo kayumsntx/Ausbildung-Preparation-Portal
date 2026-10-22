@@ -30,7 +30,7 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
-        value: https://ausbildung-web.onrender.com,http://localhost:3000
+        value: https://ausbildung-preparation-portal-app.onrender.com,https://ausbildung-preparation-portal.onrender.com,https://ausbildung-web.onrender.com,http://localhost:3000
 
   # ----------------------------------------------------------------------------
   # Frontend Web Application (Next.js 16)
