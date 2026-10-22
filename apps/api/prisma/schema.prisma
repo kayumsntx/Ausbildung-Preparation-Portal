@@ -76,6 +76,9 @@ model User {
   receivedRatings         SpeakingRating[]         @relation("TargetRatings")
   filedReports            SpeakingReport[]         @relation("ReporterReports")
   receivedReports         SpeakingReport[]         @relation("ReportedReports")
+  coinWallet              CoinWallet?
+  coinTransactions        CoinTransaction[]
+  badges                  UserBadge[]
 
   @@map("users")
 }
@@ -926,6 +929,87 @@ model SpeakingPromptTemplate {
   @@index([category])
   @@map("speaking_prompt_templates")
 }
+
+// -----------------------------------------------------------------------------
+// Virtual Coin Economy, Gamification & Stripe Checkout (Phase 8)
+// -----------------------------------------------------------------------------
+
+enum CoinTransactionType {
+  REWARD_WELCOME_BONUS
+  REWARD_QUIZ
+  REWARD_SPEAKING
+  REWARD_DAILY_STREAK
+  PURCHASE_COIN_PACK
+  SPEND_COURSE
+  SPEND_MOCK_INTERVIEW
+  ADMIN_ADJUSTMENT
+}
+
+enum BadgeType {
+  STREAK_7_DAYS
+  STREAK_30_DAYS
+  QUIZ_MASTER
+  SPEAKING_CHAMPION
+  DIN_5008_APPLICANT
+  COIN_COLLECTOR
+}
+
+model CoinWallet {
+  id                String            @id @default(uuid())
+  userId            String            @unique @map("user_id")
+  balance           Int               @default(100) // 100 free welcome coins
+  totalEarned       Int               @default(100) @map("total_earned")
+  totalSpent        Int               @default(0)   @map("total_spent")
+  currentStreakDays Int               @default(1)   @map("current_streak_days")
+  highestStreakDays Int               @default(1)   @map("highest_streak_days")
+  lastStreakClaimAt DateTime?         @map("last_streak_claim_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      CoinTransaction[]
+
+  @@index([userId])
+  @@map("coin_wallets")
+}
+
+model CoinTransaction {
+  id           String              @id @default(uuid())
+  walletId     String              @map("wallet_id")
+  userId       String              @map("user_id")
+  amount       Int                 // Positive for credits, negative for debits
+  balanceAfter Int                 @map("balance_after")
+  type         CoinTransactionType
+  description  String
+  referenceId  String?             @map("reference_id") // e.g. Stripe session ID or Course ID
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  wallet       CoinWallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("coin_transactions")
+}
+
+model UserBadge {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  badgeType   BadgeType @map("badge_type")
+  title       String
+  description String
+  icon        String    @default("Award") // Lucide icon key: Flame, Award, Video, FileText, Coins
+  awardedAt   DateTime  @default(now()) @map("awarded_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeType])
+  @@index([userId])
+  @@map("user_badges")
+}
+
 
 
 
