@@ -512,8 +512,8 @@ export class ToolkitService {
 
     const formattedParagraphs = letter.bodyText
       .split('\n\n')
-      .filter((p) => p.trim().length > 0)
-      .map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+      .filter((p: string) => p.trim().length > 0)
+      .map((p: string) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
       .join('');
 
     return `<!DOCTYPE html>
@@ -689,7 +689,7 @@ export class ToolkitService {
     });
 
     const totalCount = docs.length;
-    const totalBytes = docs.reduce((acc, curr) => acc + curr.fileSize, 0);
+    const totalBytes = docs.reduce((acc: number, curr: { fileSize: number }) => acc + curr.fileSize, 0);
 
     const categoryBreakdown: Record<string, number> = {};
     for (const d of docs) {
@@ -738,7 +738,7 @@ export class ToolkitService {
     }
 
     const totalItems = items.length;
-    const completedItems = items.filter((i) => i.isCompleted).length;
+    const completedItems = items.filter((i: { isCompleted: boolean }) => i.isCompleted).length;
     const completionPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
     return {

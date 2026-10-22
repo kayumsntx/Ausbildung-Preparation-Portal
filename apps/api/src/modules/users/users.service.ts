@@ -27,7 +27,7 @@ export class UsersService {
       status: user.status,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
-      roles: user.roles.map((r) => r.role.name),
+      roles: user.roles.map((r: { role: { name: string } }) => r.role.name),
       profile: user.profile,
       notificationPreference: user.notificationPreference,
     };
@@ -84,13 +84,13 @@ export class UsersService {
       }),
     ]);
 
-    const items = users.map((u) => ({
+    const items = users.map((u: (typeof users)[number]) => ({
       id: u.id,
       email: u.email,
       status: u.status,
       emailVerified: u.emailVerified,
       createdAt: u.createdAt,
-      roles: u.roles.map((r) => r.role.name),
+      roles: u.roles.map((r: { role: { name: string } }) => r.role.name),
       profile: u.profile,
     }));
 

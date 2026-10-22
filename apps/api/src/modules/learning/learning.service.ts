@@ -561,12 +561,14 @@ export class LearningService {
         select: { vocabularyId: true },
       });
       bookmarkedIds = new Set(
-        userBookmarks.map((b) => b.vocabularyId).filter((id): id is string => id !== null),
+        userBookmarks
+          .map((b: { vocabularyId: string | null }) => b.vocabularyId)
+          .filter((id): id is string => id !== null),
       );
     }
 
     return {
-      items: items.map((item) => ({
+      items: items.map((item: (typeof items)[number]) => ({
         ...item,
         isBookmarked: bookmarkedIds.has(item.id),
       })),

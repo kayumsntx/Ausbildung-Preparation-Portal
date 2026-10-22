@@ -460,7 +460,7 @@ export class SpeakingService {
     const ratingCount = allRatings.length;
     const avg =
       ratingCount > 0
-        ? allRatings.reduce((sum, r) => sum + r.stars, 0) / ratingCount
+        ? allRatings.reduce((sum: number, r: { stars: number }) => sum + r.stars, 0) / ratingCount
         : 5.0;
 
     await this.prisma.speakingPartnerProfile.updateMany({

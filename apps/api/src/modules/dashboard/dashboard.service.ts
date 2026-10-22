@@ -85,7 +85,7 @@ export class DashboardService {
     const avgQuizScore =
       totalQuizAttempts > 0
         ? Math.round(
-            user.quizAttempts.reduce((acc, q) => acc + q.scorePercentage, 0) / totalQuizAttempts,
+            user.quizAttempts.reduce((acc: number, q: { scorePercentage: number }) => acc + q.scorePercentage, 0) / totalQuizAttempts,
           )
         : 0;
 
@@ -126,7 +126,7 @@ export class DashboardService {
     const totalRatings = user.receivedRatings.length;
     const avgRatingScore =
       totalRatings > 0
-        ? Number((user.receivedRatings.reduce((acc, r) => acc + r.stars, 0) / totalRatings).toFixed(1))
+        ? Number((user.receivedRatings.reduce((acc: number, r: { stars: number }) => acc + r.stars, 0) / totalRatings).toFixed(1))
         : 5.0;
 
     // 5. Coin Wallet & Gamification

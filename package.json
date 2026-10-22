@@ -8,10 +8,16 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "npm run prisma:generate --workspace=apps/api",
     "dev": "npm run dev --workspaces",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",
     "build": "npm run build --workspaces",
+    "build:types": "npm run build --workspace=@ausbildung/shared-types",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/api",
+    "prisma:migrate:deploy": "npm run prisma:migrate:deploy --workspace=apps/api",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""

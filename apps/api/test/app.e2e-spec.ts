@@ -20,7 +20,11 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res) => {
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.name).toBe('Ausbildung Preparation Portal API');
+        expect(res.body.data.status).toBe('operational');
+      });
   });
 
   afterEach(async () => {

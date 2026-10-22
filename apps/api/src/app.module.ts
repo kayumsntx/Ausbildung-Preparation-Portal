@@ -2,6 +2,8 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD, Reflector } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
@@ -52,7 +54,9 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     CoinsModule,
     DashboardModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     Reflector,
     {
       provide: APP_GUARD,

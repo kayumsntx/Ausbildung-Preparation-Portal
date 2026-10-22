@@ -17,16 +17,28 @@ export class SanitizeInterceptor implements NestInterceptor {
     const http = context.switchToHttp();
     const req = http.getRequest();
 
+    const sanitizeInPlace = (target: Record<string, any>) => {
+      const sanitized = this.sanitizeValue(target);
+      for (const key of Object.keys(target)) {
+        delete target[key];
+      }
+      Object.assign(target, sanitized);
+    };
+
     if (req.body && typeof req.body === 'object') {
-      req.body = this.sanitizeValue(req.body);
+      try {
+        req.body = this.sanitizeValue(req.body);
+      } catch {
+        sanitizeInPlace(req.body);
+      }
     }
 
     if (req.query && typeof req.query === 'object') {
-      req.query = this.sanitizeValue(req.query);
+      sanitizeInPlace(req.query);
     }
 
     if (req.params && typeof req.params === 'object') {
-      req.params = this.sanitizeValue(req.params);
+      sanitizeInPlace(req.params);
     }
 
     return next.handle();

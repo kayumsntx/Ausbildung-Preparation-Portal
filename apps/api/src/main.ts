@@ -42,8 +42,10 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID', 'X-Refresh-Token'],
   });
 
-  // Global Versioned Prefix
-  app.setGlobalPrefix('api/v1');
+  // Global Versioned Prefix (exclude root '/' so Render health/status checks succeed)
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['/'],
+  });
 
   // Global DTO Validation Pipe
   app.useGlobalPipes(
