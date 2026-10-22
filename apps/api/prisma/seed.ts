@@ -1398,6 +1398,180 @@ async function main() {
     console.log('✅ Default Visa & Interview Checklists seeded.');
   }
 
+  // 11. Seed German Speaking Prompt Templates (Phase 7)
+  const speakingPrompts = [
+    {
+      id: 'prompt-b2-pflege-interview',
+      cefrLevel: 'B2',
+      category: 'VOCATIONAL_INTERVIEW',
+      title: 'Vorstellungsgespräch: Pflegefachkraft an der Universitätsklinik',
+      situationDe:
+        'Du bewirbst dich um einen Ausbildungsplatz als Pflegefachmann / Pflegefachfrau. Die Pflegedienstleitung möchte deine Motivation, deine Belastbarkeit und deine Deutschkenntnisse im Fachbereich prüfen.',
+      roleA: 'Pflegedienstleitung (stellt Fragen zur Motivation, Schichtbereitschaft und Empathie)',
+      roleB: 'Bewerber/in (erklärt praktische Erfahrungen, Motivation für Deutschland und Umgang mit Stress)',
+      vocabularyKeywords: [
+        'die Stationsübergabe',
+        'die Empathie',
+        'der Schichtdienst',
+        'die Grundpflege',
+        'die Vitalzeichenkontrolle',
+        'das Verantwortungsbewusstsein',
+      ],
+      sampleQuestions: [
+        'Warum haben Sie sich gerade für die generalistische Pflegeausbildung entschieden?',
+        'Wie gehen Sie mit emotional belastenden Situationen oder schwierigen Patienten um?',
+        'Welche praktischen Erfahrungen konnten Sie in Ihrem Heimatland bereits sammeln?',
+        'Warum möchten Sie Ihre Ausbildung genau in Deutschland absolvieren?',
+      ],
+    },
+    {
+      id: 'prompt-b1-pflege-uebergabe',
+      cefrLevel: 'B1',
+      category: 'HEALTHCARE_NURSING',
+      title: 'Schichtübergabe auf der Station: Patient Herr Müller',
+      situationDe:
+        'Der Frühdienst übergibt den Patienten Herrn Müller (72 Jahre, postoperativ nach Hüft-OP) an den Spätdienst. Wichtige Werte und Besonderheiten müssen mitgeteilt werden.',
+      roleA: 'Pflegekraft Frühdienst (berichtet über Vitalwerte, Schmerzen und Mobilisation)',
+      roleB: 'Pflegekraft Spätdienst (stellt Rückfragen zur Medikation, Wundversorgung und Kostform)',
+      vocabularyKeywords: [
+        'der Blutdruck (RR 135/85 mmHg)',
+        'die Schmerzskala (NRS 4/10)',
+        'der Verbandswechsel',
+        'die Mobilisation mit Gehbock',
+        'die Schonkost',
+        'die Thrombosespritze',
+      ],
+      sampleQuestions: [
+        'Wie hat Herr Müller die Vormittagsmobilisation vertragen?',
+        'Wann wurde das letzte Schmerzmittel verabreicht?',
+        'Gibt es Auffälligkeiten an der OP-Wunde oder den Drainagen?',
+        'Muss der Stationsarzt heute noch einmal zur Nachvisite kommen?',
+      ],
+    },
+    {
+      id: 'prompt-b2-it-fehleranalyse',
+      cefrLevel: 'B2',
+      category: 'IT_SOFTWARE',
+      title: 'Ticket-Besprechung: Kritischer Server-Fehler vor dem Release',
+      situationDe:
+        'Ein Auszubildender zum Fachinformatiker bespricht mit der Teamleitung einen 500-Internal-Server-Error in der API, der kurz vor dem Sprint-Release aufgetreten ist.',
+      roleA: 'Senior Entwickler / Teamleitung (analysiert die Logs und priorisiert den Hotfix)',
+      roleB: 'Auszubildende/r Fachinformatiker (erklärt den Bug, die Reproduktionsschritte und den Lösungsvorschlag)',
+      vocabularyKeywords: [
+        'die Fehlermeldung (Stacktrace)',
+        'die Datenbankverbindung (Timeout)',
+        'die Fehlerbehebung (Bugfix)',
+        'die Versionsverwaltung (Git Pull Request)',
+        'das Unit-Testing',
+        'die Umgebungsvariablen',
+      ],
+      sampleQuestions: [
+        'In welchem Endpunkt tritt die Exception genau auf?',
+        'Konntest du das Fehlverhalten lokal in der Entwicklungsumgebung reproduzieren?',
+        'Welche Auswirkungen hat der Fehler auf bestehende Datenbanktransaktionen?',
+        'Bis wann können wir den Bugfix im Staging-System testen?',
+      ],
+    },
+    {
+      id: 'prompt-b1-hotel-reklamation',
+      cefrLevel: 'B1',
+      category: 'HOSPITALITY_HOTEL',
+      title: 'Rezeptionsgespräch: Freundlicher Umgang mit einer Gast-Reklamation',
+      situationDe:
+        'Ein Gast an der Hotelrezeption beschwert sich über eine defekte Klimaanlage und eine fehlende Reservierung im Restaurant.',
+      roleA: 'Hotelgast (verärgert, aber höflich; bittet um sofortige Lösung)',
+      roleB: 'Auszubildende/r Hotelfachmann/frau (deeskalierend, empathisch, bietet Zimmerwechsel und Gutschein an)',
+      vocabularyKeywords: [
+        'die Unannehmlichkeit',
+        'die Reklamation',
+        'die Entschuldigung',
+        'die Zimmerkategorie',
+        'der Techniker',
+        'die Kulanz (z.B. gratis Frühstück)',
+      ],
+      sampleQuestions: [
+        'Guten Tag, in meinem Zimmer 204 funktioniert die Klimaanlage überhaupt nicht, es ist viel zu warm!',
+        'Können Sie mir versichern, dass das Problem bis heute Abend behoben ist?',
+        'Haben Sie eventuell ein alternatives ruhiges Zimmer mit funktionierender Belüftung?',
+      ],
+    },
+    {
+      id: 'prompt-b1-behoerden-wohnung',
+      cefrLevel: 'B1',
+      category: 'DAILY_LIFE_GERMANY',
+      title: 'Bürgeramt: Wohnsitzanmeldung in Deutschland',
+      situationDe:
+        'Du bist neu in Berlin angekommen und meldest deinen Wohnsitz beim Bürgeramt an. Die Sachbearbeiterin prüft die Wohnungsgeberbestätigung und deine Personalien.',
+      roleA: 'Sachbearbeiter/in im Bürgeramt (fragt nach Mietvertrag, Pass und Ausbildungsvertrag)',
+      roleB: 'Auszubildende/r (legt Unterlagen vor, beantwortet Fragen zur Steuer-ID und Religionszugehörigkeit)',
+      vocabularyKeywords: [
+        'die Wohnungsgeberbestätigung',
+        'die Meldebescheinigung',
+        'das Passdokument',
+        'die Steueridentifikationsnummer',
+        'die Geburtsurkunde',
+      ],
+      sampleQuestions: [
+        'Haben Sie die Bestätigung Ihres Vermieters im Original dabei?',
+        'Ab welchem genauen Datum sind Sie in die Wohnung eingezogen?',
+        'Möchten Sie Angaben zu einer Religionsgemeinschaft machen zwecks Kirchensteuer?',
+      ],
+    },
+    {
+      id: 'prompt-a2-kennenlernen',
+      cefrLevel: 'A2',
+      category: 'GENERAL_CONVERSATION',
+      title: 'Erstes Kennenlernen mit deinem Speaking Partner',
+      situationDe:
+        'Zwei Sprachlerner treffen sich zum ersten Mal im Sprachraum. Sie stellen sich vor, erzählen über ihre Hobbys und ihre Ausbildungsziele.',
+      roleA: 'Lernpartner A (fragt nach Heimatstadt, Lieblingsspeisen und Deutschlern-Routinen)',
+      roleB: 'Lernpartner B (erzählt über Ausbildungswünsche, Motivation und tägliche Hobbys)',
+      vocabularyKeywords: [
+        'Ich komme aus...',
+        'Mein Ziel ist...',
+        'In meiner Freizeit...',
+        'Ich lerne Deutsch seit...',
+        'Mein Lieblingsberuf ist...',
+      ],
+      sampleQuestions: [
+        'Wie heißt du und aus welcher Stadt kommst du?',
+        'Welchen Beruf möchtest du in Deutschland lernen?',
+        'Wie viele Stunden pro Tag übst du Deutsch?',
+        'Was machst du gerne am Wochenende?',
+      ],
+    },
+  ];
+
+  for (const p of speakingPrompts) {
+    await prisma.speakingPromptTemplate.upsert({
+      where: { id: p.id },
+      update: {
+        cefrLevel: p.cefrLevel as any,
+        category: p.category as any,
+        title: p.title,
+        situationDe: p.situationDe,
+        roleA: p.roleA,
+        roleB: p.roleB,
+        vocabularyKeywords: p.vocabularyKeywords,
+        sampleQuestions: p.sampleQuestions,
+        isActive: true,
+      },
+      create: {
+        id: p.id,
+        cefrLevel: p.cefrLevel as any,
+        category: p.category as any,
+        title: p.title,
+        situationDe: p.situationDe,
+        roleA: p.roleA,
+        roleB: p.roleB,
+        vocabularyKeywords: p.vocabularyKeywords,
+        sampleQuestions: p.sampleQuestions,
+        isActive: true,
+      },
+    });
+  }
+  console.log('✅ Speaking Prompt Templates seeded (6 vocational dialog cards).');
+
   console.log('🎉 Database seeding completed successfully.');
 }
 

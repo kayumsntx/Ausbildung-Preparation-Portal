@@ -69,6 +69,13 @@ model User {
   coverLetters            CoverLetter[]
   userDocuments           UserDocument[]
   checklists              ApplicationChecklist[]
+  speakingProfile         SpeakingPartnerProfile?
+  hostedSessions          SpeakingSession[]        @relation("HostedSpeakingSessions")
+  joinedSessions          SpeakingSession[]        @relation("JoinedSpeakingSessions")
+  givenRatings            SpeakingRating[]         @relation("ReviewerRatings")
+  receivedRatings         SpeakingRating[]         @relation("TargetRatings")
+  filedReports            SpeakingReport[]         @relation("ReporterReports")
+  receivedReports         SpeakingReport[]         @relation("ReportedReports")
 
   @@map("users")
 }
@@ -772,6 +779,154 @@ model ApplicationChecklist {
   @@index([category])
   @@map("application_checklists")
 }
+
+// -----------------------------------------------------------------------------
+// Speaking Practice Partner & Audio/Video WebRTC Calls (Phase 7)
+// -----------------------------------------------------------------------------
+
+enum SpeakingSessionStatus {
+  WAITING
+  MATCHED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  REPORTED
+}
+
+enum SpeakingTopicCategory {
+  VOCATIONAL_INTERVIEW
+  HEALTHCARE_NURSING
+  IT_SOFTWARE
+  HOSPITALITY_HOTEL
+  DAILY_LIFE_GERMANY
+  GENERAL_CONVERSATION
+}
+
+enum SpeakingReportReason {
+  INAPPROPRIATE_BEHAVIOR
+  HARASSMENT
+  LANGUAGE_MISMATCH
+  NO_SHOW
+  TECHNICAL_FAILURE
+  OTHER
+}
+
+model SpeakingPartnerProfile {
+  id                    String      @id @default(uuid())
+  userId                String      @unique @map("user_id")
+  cefrLevel             CefrLevel   @default(B1) @map("cefr_level")
+  gender                String?     // "MALE", "FEMALE", "PREFER_NOT_TO_SAY"
+  preferredGender       String?     @default("ANY") @map("preferred_gender") // "ANY", "SAME_GENDER", "FEMALE_ONLY"
+  nativeLanguage        String      @default("Bengali") @map("native_language")
+  targetVocationalField String?     @map("target_vocational_field")
+  totalSessions         Int         @default(0) @map("total_sessions")
+  totalMinutes          Int         @default(0) @map("total_minutes")
+  averageRating         Float       @default(5.0) @map("average_rating")
+  ratingCount           Int         @default(0) @map("rating_count")
+  coinsEarned           Int         @default(0) @map("coins_earned")
+  isAvailable           Boolean     @default(true) @map("is_available")
+  bio                   String?
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([cefrLevel])
+  @@index([isAvailable])
+  @@map("speaking_partner_profiles")
+}
+
+model SpeakingSession {
+  id               String                 @id @default(uuid())
+  roomId           String                 @unique @map("room_id")
+  hostUserId       String                 @map("host_user_id")
+  peerUserId       String?                @map("peer_user_id")
+  status           SpeakingSessionStatus  @default(WAITING)
+  targetLevel      CefrLevel              @default(B1) @map("target_level")
+  topicCategory    SpeakingTopicCategory  @default(GENERAL_CONVERSATION) @map("topic_category")
+  genderPreference String                 @default("ANY") @map("gender_preference")
+  durationMinutes  Int                    @default(15) @map("duration_minutes")
+  guidedPromptId   String?                @map("guided_prompt_id")
+  guidedPrompt     Json?                  @map("guided_prompt") // { title, situationDe, roleA, roleB, vocabularyKeywords, sampleQuestions }
+  startedAt        DateTime?              @map("started_at")
+  endedAt          DateTime?              @map("ended_at")
+  coinsAwarded     Int                    @default(0) @map("coins_awarded")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+
+  hostUser         User                   @relation("HostedSpeakingSessions", fields: [hostUserId], references: [id], onDelete: Cascade)
+  peerUser         User?                  @relation("JoinedSpeakingSessions", fields: [peerUserId], references: [id], onDelete: SetNull)
+  ratings          SpeakingRating[]
+  reports          SpeakingReport[]
+
+  @@index([status])
+  @@index([hostUserId])
+  @@index([peerUserId])
+  @@index([targetLevel])
+  @@map("speaking_sessions")
+}
+
+model SpeakingRating {
+  id               String          @id @default(uuid())
+  sessionId        String          @map("session_id")
+  reviewerId       String          @map("reviewer_id")
+  targetUserId     String          @map("target_user_id")
+  stars            Int             @default(5)
+  fluencyScore     Int?            @map("fluency_score")
+  punctualityScore Int?            @map("punctuality_score")
+  badge            String?         // "SEHR_FREUNDLICH", "GUTE_AUSSPRACHE", "HILFREICH"
+  comment          String?
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  session          SpeakingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reviewer         User            @relation("ReviewerRatings", fields: [reviewerId], references: [id], onDelete: Cascade)
+  targetUser       User            @relation("TargetRatings", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([targetUserId])
+  @@map("speaking_ratings")
+}
+
+model SpeakingReport {
+  id              String               @id @default(uuid())
+  sessionId       String               @map("session_id")
+  reporterId      String               @map("reporter_id")
+  reportedUserId  String               @map("reported_user_id")
+  reason          SpeakingReportReason
+  details         String
+  isResolved      Boolean              @default(false) @map("is_resolved")
+  resolutionNotes String?              @map("resolution_notes")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  session         SpeakingSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reporter        User                 @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser    User                 @relation("ReportedReports", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([reportedUserId])
+  @@index([isResolved])
+  @@map("speaking_reports")
+}
+
+model SpeakingPromptTemplate {
+  id                 String                @id @default(uuid())
+  cefrLevel          CefrLevel             @map("cefr_level")
+  category           SpeakingTopicCategory
+  title              String
+  situationDe        String                @map("situation_de")
+  roleA              String                @map("role_a")
+  roleB              String                @map("role_b")
+  vocabularyKeywords Json                  @map("vocabulary_keywords") // string[]
+  sampleQuestions    Json                  @map("sample_questions")    // string[]
+  isActive           Boolean               @default(true) @map("is_active")
+  createdAt          DateTime              @default(now()) @map("created_at")
+
+  @@index([cefrLevel])
+  @@index([category])
+  @@map("speaking_prompt_templates")
+}
+
 
 
 
