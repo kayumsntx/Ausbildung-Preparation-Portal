@@ -61,6 +61,10 @@ model User {
   bookmarks               UserBookmark[]
   savedJobs               SavedJob[]
   jobApplications         JobApplication[]
+  courseEnrollments       CourseEnrollment[]
+  certificates            Certificate[]
+  orders                  Order[]
+  instructorProfile       Instructor?
 
   @@map("users")
 }
@@ -502,4 +506,181 @@ model JobSyncLog {
   @@index([createdAt])
   @@map("job_sync_logs")
 }
+
+// -----------------------------------------------------------------------------
+// LMS Courses & Paid Educational Programs (Phase 5)
+// -----------------------------------------------------------------------------
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  COINS
+  FREE
+}
+
+model Instructor {
+  id        String   @id @default(uuid())
+  userId    String?  @unique @map("user_id")
+  name      String
+  title     String   // e.g. "Goethe-Certified German Educator"
+  bio       String
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  courses   Course[]
+
+  @@map("instructors")
+}
+
+model Course {
+  id            String             @id @default(uuid())
+  slug          String             @unique
+  title         String
+  level         String             // e.g. "A1 Beginner", "B2 Specialized", "B1–B2"
+  category      String             // e.g. "Healthcare Terminology", "IT & Engineering", "General German"
+  badge         String?            // e.g. "Popular Free Course", "High Employment Impact"
+  description   String
+  instructorId  String             @map("instructor_id")
+  durationHours Int                @default(10) @map("duration_hours")
+  isFree        Boolean            @default(true) @map("is_free")
+  priceCents    Int                @default(0) @map("price_cents") // EUR in exact cents, e.g. 2900 = €29.00
+  coinPrice     Int                @default(0) @map("coin_price")  // e.g. 350 Coins
+  isPublished   Boolean            @default(true) @map("is_published")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  instructor    Instructor         @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  modules       CourseModule[]
+  enrollments   CourseEnrollment[]
+  certificates  Certificate[]
+  orders        Order[]
+
+  @@index([category])
+  @@index([isFree])
+  @@map("courses")
+}
+
+model CourseModule {
+  id            String         @id @default(uuid())
+  courseId      String         @map("course_id")
+  title         String
+  description   String?
+  sequenceOrder Int            @map("sequence_order")
+
+  course        Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons       CourseLesson[]
+
+  @@index([courseId])
+  @@map("course_modules")
+}
+
+model CourseLesson {
+  id              String                 @id @default(uuid())
+  moduleId        String                 @map("module_id")
+  slug            String                 @unique
+  title           String
+  durationMinutes Int                    @default(15) @map("duration_minutes")
+  videoUrl        String?                @map("video_url")
+  textContent     String?                @map("text_content")
+  resources       Json?                  // Downloadable attachments: [{ title, url, type }]
+  sequenceOrder   Int                    @map("sequence_order")
+  isFreePreview   Boolean                @default(false) @map("is_free_preview")
+
+  module          CourseModule           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress        CourseLessonProgress[]
+
+  @@index([moduleId])
+  @@map("course_lessons")
+}
+
+model CourseEnrollment {
+  id                 String                 @id @default(uuid())
+  userId             String                 @map("user_id")
+  courseId           String                 @map("course_id")
+  status             EnrollmentStatus       @default(ACTIVE)
+  progressPercentage Int                    @default(0) @map("progress_percentage")
+  enrolledAt         DateTime               @default(now()) @map("enrolled_at")
+  completedAt        DateTime?              @map("completed_at")
+  lastAccessedAt     DateTime               @default(now()) @map("last_accessed_at")
+
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course             Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonProgress     CourseLessonProgress[]
+  certificate        Certificate?
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@map("course_enrollments")
+}
+
+model CourseLessonProgress {
+  id           String           @id @default(uuid())
+  enrollmentId String           @map("enrollment_id")
+  lessonId     String           @map("lesson_id")
+  isCompleted  Boolean          @default(true) @map("is_completed")
+  completedAt  DateTime         @default(now()) @map("completed_at")
+
+  enrollment   CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson       CourseLesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@map("course_lesson_progress")
+}
+
+model Certificate {
+  id               String           @id @default(uuid())
+  certificateCode  String           @unique @map("certificate_code") // e.g. "CERT-2026-A1B2-789X"
+  userId           String           @map("user_id")
+  courseId         String           @map("course_id")
+  enrollmentId     String           @unique @map("enrollment_id")
+  recipientName    String           @map("recipient_name")
+  courseTitle      String           @map("course_title")
+  issuedAt         DateTime         @default(now()) @map("issued_at")
+  verificationHash String           @unique @map("verification_hash") // SHA-256 digital verification hash
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrollment       CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([certificateCode])
+  @@map("certificates")
+}
+
+model Order {
+  id                    String        @id @default(uuid())
+  userId                String        @map("user_id")
+  courseId              String?       @map("course_id")
+  amountCents           Int           @default(0) @map("amount_cents")
+  coinsAmount           Int           @default(0) @map("coins_amount")
+  paymentMethod         PaymentMethod @map("payment_method")
+  status                OrderStatus   @default(PENDING)
+  stripePaymentIntentId String?       @unique @map("stripe_payment_intent_id")
+  idempotencyKey        String        @unique @map("idempotency_key")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course                Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([idempotencyKey])
+  @@map("orders")
+}
+
 

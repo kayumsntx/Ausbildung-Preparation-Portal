@@ -1077,6 +1077,267 @@ async function main() {
   }
   console.log('✅ Realistic Ausbildung job listings seeded (6 vacancies across Berlin, Bayern, Baden-Württemberg, Hessen, Sachsen).');
 
+  // 9. Seed LMS Courses, Instructors, Modules & Lessons (Phase 5)
+  const instructorsData = [
+    {
+      id: 'inst-001',
+      name: 'Julia Schneider, M.A.',
+      title: 'Goethe-Certified German Educator',
+      bio: 'Over 12 years of experience preparing South Asian and international learners for Goethe-Zertifikat exams and German vocational training integration.',
+    },
+    {
+      id: 'inst-002',
+      name: 'Dr. med. Tobias Weber',
+      title: 'Clinical Instructor & Medical Linguist',
+      bio: 'Practicing physician in Berlin and specialist in medical German communication protocols for international nurses and healthcare apprentices.',
+    },
+    {
+      id: 'inst-003',
+      name: 'Rahim Chowdhury',
+      title: 'Ausbildung Alumnus & Career Coach',
+      bio: 'Completed dual vocational training in Germany in 2021; now mentors international applicants through German embassy interviews and cultural onboarding.',
+    },
+    {
+      id: 'inst-004',
+      name: 'Markus Becker, Dipl.-Ing.',
+      title: 'Industrial Trainer, Siemens Partner',
+      bio: '20+ years of industrial automation and Mechatronics engineering training in Bavaria.',
+    },
+  ];
+
+  for (const inst of instructorsData) {
+    await prisma.instructor.upsert({
+      where: { id: inst.id },
+      update: { name: inst.name, title: inst.title, bio: inst.bio },
+      create: { id: inst.id, name: inst.name, title: inst.title, bio: inst.bio },
+    });
+  }
+  console.log('✅ LMS Course Instructors seeded (4 educators).');
+
+  const coursesData = [
+    {
+      id: 'course-001',
+      slug: 'complete-german-a1-ausbildung',
+      title: 'Complete German A1 for Ausbildung Starters',
+      level: 'A1 Beginner',
+      category: 'General German',
+      badge: 'Popular Free Course',
+      instructorId: 'inst-001',
+      durationHours: 35,
+      isFree: true,
+      priceCents: 0,
+      coinPrice: 0,
+      description: 'Master essential everyday German, grammar basics, self-introduction, and foundational vocational vocabulary for your apprenticeship start.',
+      modules: [
+        {
+          id: 'cmod-001',
+          title: 'Alltagsdeutsch & Erste Schritte im Betrieb',
+          sequenceOrder: 1,
+          lessons: [
+            {
+              id: 'cles-001',
+              slug: 'a1-c1-alphabet-phonetik',
+              title: 'Das deutsche Alphabet & Phonetik für Auszubildende',
+              durationMinutes: 20,
+              videoUrl: 'https://www.youtube.com/watch?v=sample-a1-1',
+              textContent: 'Die korrekte Aussprache von Umlauten (ä, ö, ü) und Diphthongen (ei, eu, au) im deutschen Arbeitsalltag.',
+              sequenceOrder: 1,
+              isFreePreview: true,
+            },
+            {
+              id: 'cles-002',
+              slug: 'a1-c1-zahlen-uhrzeiten',
+              title: 'Zahlen, Uhrzeiten & Schichtzeiten im Ausbildungsbetrieb',
+              durationMinutes: 25,
+              videoUrl: 'https://www.youtube.com/watch?v=sample-a1-2',
+              textContent: 'Präzise Uhrzeiten, Wochentage und Datumsangaben für Dienstpläne und Termine.',
+              sequenceOrder: 2,
+              isFreePreview: true,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'course-002',
+      slug: 'b2-medical-german-nursing-ausbildung',
+      title: 'B2 Medical German for Nursing Ausbildung (Pflegefachmann)',
+      level: 'B2 Specialized',
+      category: 'Healthcare Terminology',
+      badge: 'High Employment Impact',
+      instructorId: 'inst-002',
+      durationHours: 28,
+      isFree: false,
+      priceCents: 2900, // €29.00
+      coinPrice: 350,   // 350 Coins
+      description: 'Patient anamnesis, medication reporting, hospital documentation, and verbal handovers in clinical German.',
+      modules: [
+        {
+          id: 'cmod-002',
+          title: 'Klinische Kommunikation & Dokumentation',
+          sequenceOrder: 1,
+          lessons: [
+            {
+              id: 'cles-003',
+              slug: 'b2-med-anamnese-aufnahme',
+              title: 'Aufnahmegespräch und Schmerzskala dokumentieren',
+              durationMinutes: 30,
+              videoUrl: 'https://www.youtube.com/watch?v=sample-b2-1',
+              textContent: 'Leitfaden für die strukturierte Patientenaufnahme im Krankenhaus gemäß deutschen Pflegestandards.',
+              sequenceOrder: 1,
+              isFreePreview: true,
+            },
+            {
+              id: 'cles-004',
+              slug: 'b2-med-medikamente-dosierung',
+              title: 'Medikamentenverabreichung & Dosierungsvorschriften',
+              durationMinutes: 35,
+              videoUrl: 'https://www.youtube.com/watch?v=sample-b2-2',
+              textContent: 'Verständliche Fachsprache bei der 5-R-Regel der Arzneimitteltherapie.',
+              sequenceOrder: 2,
+              isFreePreview: false,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'course-003',
+      slug: 'german-workplace-etiquette-embassy-mastery',
+      title: 'German Workplace Etiquette & Embassy Interview Mastery',
+      level: 'All Levels',
+      category: 'Career & Visa',
+      badge: 'Visa Preparation',
+      instructorId: 'inst-003',
+      durationHours: 12,
+      isFree: true,
+      priceCents: 0,
+      coinPrice: 0,
+      description: 'Answering tough questions at German embassy appointments and understanding German punctuality, contracts, and workplace expectations.',
+      modules: [
+        {
+          id: 'cmod-003',
+          title: 'Botschaftstermin & Deutsche Arbeitskultur',
+          sequenceOrder: 1,
+          lessons: [
+            {
+              id: 'cles-005',
+              slug: 'visa-botschaftsfragen-top10',
+              title: 'Die 10 entscheidenden Fragen im deutschen Visumsinterview',
+              durationMinutes: 25,
+              videoUrl: 'https://www.youtube.com/watch?v=sample-visa-1',
+              textContent: 'Authentische Vorbereitung auf Fragen zur Motivation, Ausbildungswahl und Finanzierungsnachweis.',
+              sequenceOrder: 1,
+              isFreePreview: true,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'course-004',
+      slug: 'technical-german-it-mechatronics',
+      title: 'Technical German for IT & Mechatronics Apprenticeships',
+      level: 'B1–B2',
+      category: 'Engineering & Tech',
+      badge: 'Technical Specialist',
+      instructorId: 'inst-004',
+      durationHours: 24,
+      isFree: false,
+      priceCents: 2500, // €25.00
+      coinPrice: 300,   // 300 Coins
+      description: 'Circuit diagrams, safety briefings, incident reporting, and technical dialogue in modern German workshops.',
+      modules: [
+        {
+          id: 'cmod-004',
+          title: 'Industrielle Kommunikation & Arbeitssicherheit',
+          sequenceOrder: 1,
+          lessons: [
+            {
+              id: 'cles-006',
+              slug: 'tech-schaltplaene-sensoren',
+              title: 'Schaltpläne, Sensoren und Aktoren verstehen',
+              durationMinutes: 30,
+              videoUrl: 'https://www.youtube.com/watch?v=sample-tech-1',
+              textContent: 'Terminologie elektronischer Komponenten und Sicherheitshinweise nach DGUV Vorschriften.',
+              sequenceOrder: 1,
+              isFreePreview: true,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  for (const c of coursesData) {
+    const course = await prisma.course.upsert({
+      where: { slug: c.slug },
+      update: {
+        title: c.title,
+        level: c.level,
+        category: c.category,
+        badge: c.badge,
+        instructorId: c.instructorId,
+        durationHours: c.durationHours,
+        isFree: c.isFree,
+        priceCents: c.priceCents,
+        coinPrice: c.coinPrice,
+        description: c.description,
+        isPublished: true,
+      },
+      create: {
+        id: c.id,
+        slug: c.slug,
+        title: c.title,
+        level: c.level,
+        category: c.category,
+        badge: c.badge,
+        instructorId: c.instructorId,
+        durationHours: c.durationHours,
+        isFree: c.isFree,
+        priceCents: c.priceCents,
+        coinPrice: c.coinPrice,
+        description: c.description,
+        isPublished: true,
+      },
+    });
+
+    for (const mod of c.modules) {
+      const moduleRecord = await prisma.courseModule.upsert({
+        where: { id: mod.id },
+        update: { title: mod.title, sequenceOrder: mod.sequenceOrder, courseId: course.id },
+        create: { id: mod.id, courseId: course.id, title: mod.title, sequenceOrder: mod.sequenceOrder },
+      });
+
+      for (const les of mod.lessons) {
+        await prisma.courseLesson.upsert({
+          where: { slug: les.slug },
+          update: {
+            title: les.title,
+            durationMinutes: les.durationMinutes,
+            videoUrl: les.videoUrl,
+            textContent: les.textContent,
+            sequenceOrder: les.sequenceOrder,
+            isFreePreview: les.isFreePreview,
+            moduleId: moduleRecord.id,
+          },
+          create: {
+            id: les.id,
+            moduleId: moduleRecord.id,
+            slug: les.slug,
+            title: les.title,
+            durationMinutes: les.durationMinutes,
+            videoUrl: les.videoUrl,
+            textContent: les.textContent,
+            sequenceOrder: les.sequenceOrder,
+            isFreePreview: les.isFreePreview,
+          },
+        });
+      }
+    }
+  }
+  console.log('✅ LMS Courses, Modules & Lessons seeded (4 specialized vocational courses).');
+
   console.log('🎉 Database seeding completed successfully.');
 }
 

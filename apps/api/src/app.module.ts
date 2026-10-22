@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { LearningModule } from './modules/learning/learning.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
+import { CoursesModule } from './modules/courses/courses.module.js';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware.js';
@@ -21,6 +22,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     UsersModule,
     LearningModule,
     JobsModule,
+    CoursesModule,
   ],
   providers: [
     {
