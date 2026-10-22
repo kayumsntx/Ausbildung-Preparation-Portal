@@ -10,7 +10,24 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security Middleware
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      xFrameOptions: { action: 'deny' },
+    }),
+  );
   app.use(cookieParser());
 
   // CORS configuration

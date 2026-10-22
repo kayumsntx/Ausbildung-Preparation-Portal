@@ -193,6 +193,8 @@ model AuditLog {
 
   @@index([actorId])
   @@index([action])
+  @@index([targetEntity, targetId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -377,6 +379,7 @@ model LessonProgress {
 
   @@unique([userId, lessonId])
   @@index([userId])
+  @@index([userId, isCompleted])
   @@map("lesson_progress")
 }
 
@@ -444,6 +447,7 @@ model JobListing {
   @@unique([source, externalId])
   @@index([city])
   @@index([category])
+  @@index([category, city])
   @@index([requiredGermanLevel])
   @@index([publishedAt])
   @@map("job_listings")
@@ -488,6 +492,7 @@ model JobApplication {
 
   @@index([userId])
   @@index([status])
+  @@index([userId, status])
   @@map("job_applications")
 }
 
@@ -991,6 +996,7 @@ model CoinTransaction {
   @@index([userId])
   @@index([type])
   @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("coin_transactions")
 }
 
