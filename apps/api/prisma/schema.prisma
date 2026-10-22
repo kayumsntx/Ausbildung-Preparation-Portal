@@ -59,6 +59,8 @@ model User {
   quizAttempts            QuizAttempt[]
   lessonProgress          LessonProgress[]
   bookmarks               UserBookmark[]
+  savedJobs               SavedJob[]
+  jobApplications         JobApplication[]
 
   @@map("users")
 }
@@ -376,3 +378,128 @@ model UserBookmark {
   @@index([userId])
   @@map("user_bookmarks")
 }
+
+// -----------------------------------------------------------------------------
+// Job Search & Application Tracker Entities (Phase 4)
+// -----------------------------------------------------------------------------
+
+enum JobApplicationStatus {
+  SAVED
+  PLANNED
+  APPLIED
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model JobListing {
+  id                  String               @id @default(uuid())
+  externalId          String?              @map("external_id")
+  source              String               @default("BUNDESAGENTUR") // BUNDESAGENTUR, DIRECT_EMPLOYER, INTERNAL
+  title               String
+  employer            String
+  city                String
+  postalCode          String?              @map("postal_code")
+  state               String?
+  country             String               @default("Deutschland")
+  category            String               // e.g., "Healthcare / Nursing", "IT & Software", "Mechatronics"
+  stipendYear1        String?              @map("stipend_year_1") // e.g. "€1,190 / month"
+  stipendYear1Cents   Int?                 @map("stipend_year_1_cents") // exact cents e.g. 119000
+  requiredGermanLevel CefrLevel?           @default(B1) @map("required_german_level")
+  description         String
+  requirements        Json?                // Array of string requirements
+  benefits            Json?                // Array of strings e.g. ["Housing Support", "Staff Meals"]
+  externalUrl         String?              @map("external_url")
+  contactEmail        String?              @map("contact_email")
+  contactPhone        String?              @map("contact_phone")
+  publishedAt         DateTime             @default(now()) @map("published_at")
+  expiresAt           DateTime?            @map("expires_at")
+  isActive            Boolean              @default(true) @map("is_active")
+  metadata            Json?                // Raw Bundesagentur response payload for diagnostics
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  savedBy             SavedJob[]
+  applications        JobApplication[]
+
+  @@unique([source, externalId])
+  @@index([city])
+  @@index([category])
+  @@index([requiredGermanLevel])
+  @@index([publishedAt])
+  @@map("job_listings")
+}
+
+model SavedJob {
+  id           String      @id @default(uuid())
+  userId       String      @map("user_id")
+  jobListingId String      @map("job_listing_id")
+  notes        String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job          JobListing  @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobListingId])
+  @@index([userId])
+  @@map("saved_jobs")
+}
+
+model JobApplication {
+  id                 String                     @id @default(uuid())
+  userId             String                     @map("user_id")
+  jobListingId       String?                    @map("job_listing_id")
+  customCompany      String?                    @map("custom_company") // For manually tracked off-portal jobs
+  customRole         String?                    @map("custom_role")
+  city               String?
+  status             JobApplicationStatus       @default(APPLIED)
+  appliedAt          DateTime?                  @default(now()) @map("applied_at")
+  interviewDate      DateTime?                  @map("interview_date")
+  contactPerson      String?                    @map("contact_person")
+  contactEmail       String?                    @map("contact_email")
+  salaryOfferCents   Int?                       @map("salary_offer_cents")
+  notes              String?
+  nextFollowUpDate   DateTime?                  @map("next_follow_up_date")
+  createdAt          DateTime                   @default(now()) @map("created_at")
+  updatedAt          DateTime                   @updatedAt @map("updated_at")
+
+  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job                JobListing?                @relation(fields: [jobListingId], references: [id], onDelete: SetNull)
+  statusHistory      ApplicationStatusHistory[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("job_applications")
+}
+
+model ApplicationStatusHistory {
+  id            String               @id @default(uuid())
+  applicationId String               @map("application_id")
+  fromStatus    JobApplicationStatus? @map("from_status")
+  toStatus      JobApplicationStatus @map("to_status")
+  notes         String?
+  changedAt     DateTime             @default(now()) @map("changed_at")
+
+  application   JobApplication       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("application_status_history")
+}
+
+model JobSyncLog {
+  id             String    @id @default(uuid())
+  source         String    @default("BUNDESAGENTUR")
+  queryTerm      String?   @map("query_term")
+  location       String?
+  recordsFetched Int       @map("records_fetched")
+  recordsSaved   Int       @map("records_saved")
+  status         String    // "SUCCESS", "FAILED", "CACHED"
+  errorMessage   String?   @map("error_message")
+  durationMs     Int       @map("duration_ms")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("job_sync_logs")
+}
+
