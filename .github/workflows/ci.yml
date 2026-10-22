@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Enterprise Production CI Pipeline
 
 on:
   push:
@@ -7,26 +7,96 @@ on:
     branches: [main, master, develop]
 
 jobs:
-  validate:
+  api-validation:
+    name: Backend API Tests & Linting
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: ausbildung_portal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/ausbildung_portal?schema=public
+      JWT_ACCESS_SECRET: ci_test_access_secret_super_secure_32_bytes_min
+      JWT_REFRESH_SECRET: ci_test_refresh_secret_super_secure_32_bytes_min
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client & Push Test Schema
+        working-directory: apps/api
+        run: |
+          npx prisma generate
+          npx prisma db push --accept-data-loss
+
+      - name: Run Type Checking & Linter
+        working-directory: apps/api
+        run: |
+          npx tsc --noEmit
+          npx oxlint --type-aware
+
+      - name: Run 100% Vitest Unit & Integration Tests
+        working-directory: apps/api
+        run: npm run test
+
+      - name: Export OpenAPI Specification for Mobile SDK
+        working-directory: apps/api
+        run: npm run export:openapi
+
+      - name: Compile Backend Production Bundle
+        working-directory: apps/api
+        run: npm run build
+
+  web-validation:
+    name: Frontend Web Validation & Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Linters & Formatter Check
-        run: npm run lint
-
-      - name: Run Automated Tests
-        run: npm run test
-
-      - name: Production Build Check
+      - name: Build Next.js 16 Production Bundle (Turbopack)
+        working-directory: apps/web
         run: npm run build

@@ -1,0 +1,2050 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Account registered successfully."
+          },
+          "409": {
+            "description": "Email address already in use."
+          }
+        },
+        "summary": "Register a new applicant account",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Login successful; tokens issued."
+          },
+          "401": {
+            "description": "Invalid email or password."
+          }
+        },
+        "summary": "Sign in with email and password",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Tokens rotated successfully."
+          },
+          "401": {
+            "description": "Invalid or reused refresh token."
+          }
+        },
+        "summary": "Rotate refresh token and issue new access token",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sign out and revoke active session",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Verify email address with token",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Request password reset instructions (anti-enumeration)",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Set new password with reset token",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "UsersController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve authenticated user profile, roles, and preferences",
+        "tags": [
+          "User Management & Profile"
+        ]
+      }
+    },
+    "/api/v1/users/me/profile": {
+      "patch": {
+        "operationId": "UsersController_updateProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update personal profile information",
+        "tags": [
+          "User Management & Profile"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "UsersController_listUsers",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PENDING_VERIFICATION",
+                "ACTIVE",
+                "SUSPENDED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "STUDENT",
+                "INSTRUCTOR",
+                "MODERATOR",
+                "ADMIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin directory: list users with pagination and filters",
+        "tags": [
+          "User Management & Profile"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/status": {
+      "patch": {
+        "operationId": "UsersController_updateUserStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: update user account status (e.g. SUSPEND or ACTIVATE)",
+        "tags": [
+          "User Management & Profile"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/roles": {
+      "post": {
+        "operationId": "UsersController_assignRole",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: assign a role to user (e.g. INSTRUCTOR or MODERATOR)",
+        "tags": [
+          "User Management & Profile"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/roles/{role}": {
+      "delete": {
+        "operationId": "UsersController_removeRole",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: remove a role from user",
+        "tags": [
+          "User Management & Profile"
+        ]
+      }
+    },
+    "/api/v1/learning/levels": {
+      "get": {
+        "operationId": "LearningController_getLevels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Levels retrieved successfully."
+          }
+        },
+        "summary": "List CEFR levels (A1-B2) with optional authenticated user completion percentage",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/learning/modules": {
+      "get": {
+        "operationId": "LearningController_getModules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Modules retrieved successfully."
+          }
+        },
+        "summary": "List curriculum modules filtered by CEFR level and localized into Bengali/English/German",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/learning/lessons/{slug}": {
+      "get": {
+        "operationId": "LearningController_getLessonBySlug",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "description": "Target translation locale (bn, en, de)",
+            "schema": {
+              "example": "bn"
+            }
+          },
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Unique lesson URL slug",
+            "schema": {
+              "example": "a1-m1-sich-vorstellen"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson detail retrieved."
+          },
+          "404": {
+            "description": "Lesson not found."
+          }
+        },
+        "summary": "Retrieve comprehensive lesson content by slug, including vocabulary and safe quiz questions",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/learning/lessons/{id}/quiz-attempt": {
+      "post": {
+        "operationId": "LearningController_submitQuiz",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "UUID of the lesson being tested",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Quiz evaluated successfully."
+          },
+          "400": {
+            "description": "Invalid submission or no quiz questions."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit quiz answers for server-side evaluation, coin reward attribution, and progress recording",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/learning/streak": {
+      "get": {
+        "operationId": "LearningController_getStreak",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Learning streak metrics retrieved."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Calculate current and longest learning streak in consecutive days",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/learning/bookmarks": {
+      "post": {
+        "operationId": "LearningController_toggleBookmark",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Bookmark toggled."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle bookmark for a vocabulary item or lesson",
+        "tags": [
+          "German Learning"
+        ]
+      },
+      "get": {
+        "operationId": "LearningController_getBookmarks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Bookmarks retrieved successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all bookmarked lessons and vocabulary items for the user",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/learning/vocabulary": {
+      "get": {
+        "operationId": "LearningController_getVocabulary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Vocabulary items retrieved."
+          }
+        },
+        "summary": "Search and browse vocabulary items with phonetic IPA and translations",
+        "tags": [
+          "German Learning"
+        ]
+      }
+    },
+    "/api/v1/jobs/search": {
+      "get": {
+        "operationId": "JobsController_searchJobs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of matching Ausbildung vacancies with pagination."
+          }
+        },
+        "summary": "Search and filter Ausbildung vacancies with local caching and Bundesagentur API fallback",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/jobs/saved": {
+      "get": {
+        "operationId": "JobsController_getSavedJobs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Saved jobs list retrieved."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all bookmarked Ausbildung vacancies for the authenticated student",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/jobs/applications": {
+      "get": {
+        "operationId": "JobsController_listApplications",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by specific stage",
+            "schema": {
+              "enum": [
+                "SAVED",
+                "PLANNED",
+                "APPLIED",
+                "INTERVIEW",
+                "OFFER",
+                "REJECTED",
+                "WITHDRAWN"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application pipeline and metrics retrieved."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve student job application tracker pipeline with stage counts",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      },
+      "post": {
+        "operationId": "JobsController_createApplication",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Application created in tracker."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a new application to the tracking pipeline",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/jobs/applications/{id}/status": {
+      "patch": {
+        "operationId": "JobsController_updateApplicationStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Application UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application stage updated."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update application stage (e.g. APPLIED -> INTERVIEW -> OFFER) with notes",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/jobs/applications/{id}": {
+      "delete": {
+        "operationId": "JobsController_deleteApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Application UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application removed."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a tracked application from the pipeline",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/jobs/{id}": {
+      "get": {
+        "operationId": "JobsController_getJobById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Job listing UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job detail retrieved."
+          },
+          "404": {
+            "description": "Job not found."
+          }
+        },
+        "summary": "Retrieve full job posting details with bookmark and application status",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/jobs/{id}/save": {
+      "post": {
+        "operationId": "JobsController_toggleSaveJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Job listing UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookmark toggled."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Bookmark or un-bookmark an Ausbildung vacancy",
+        "tags": [
+          "Job Search & Applications"
+        ]
+      }
+    },
+    "/api/v1/courses": {
+      "get": {
+        "operationId": "CoursesController_getCourses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of courses returned successfully."
+          }
+        },
+        "summary": "List published LMS courses with filters and authenticated enrollment status",
+        "tags": [
+          "Courses & LMS"
+        ]
+      }
+    },
+    "/api/v1/courses/my-enrollments": {
+      "get": {
+        "operationId": "CoursesController_getUserEnrollments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Student enrollments retrieved."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve all active course enrollments and digital certificates for the student",
+        "tags": [
+          "Courses & LMS"
+        ]
+      }
+    },
+    "/api/v1/courses/verify-certificate/{code}": {
+      "get": {
+        "operationId": "CoursesController_verifyCertificate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "description": "Unique certificate serial code",
+            "schema": {
+              "example": "CERT-2026-COMP-AB12"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificate verified as authentic."
+          },
+          "404": {
+            "description": "Certificate not found or invalid."
+          }
+        },
+        "summary": "Publicly verify the authenticity of a student completion certificate by unique serial code",
+        "tags": [
+          "Courses & LMS"
+        ]
+      }
+    },
+    "/api/v1/courses/{slug}": {
+      "get": {
+        "operationId": "CoursesController_getCourseBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Course unique slug",
+            "schema": {
+              "example": "complete-german-a1-ausbildung"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course details and syllabus retrieved."
+          },
+          "404": {
+            "description": "Course not found."
+          }
+        },
+        "summary": "Retrieve course syllabus, free preview lessons, or full lesson access for enrolled students",
+        "tags": [
+          "Courses & LMS"
+        ]
+      }
+    },
+    "/api/v1/courses/{id}/enroll": {
+      "post": {
+        "operationId": "CoursesController_enrollCourse",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Course UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Course enrollment created."
+          },
+          "400": {
+            "description": "Invalid payment or already enrolled."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enroll in a course using Free, Coins, or Stripe card payment with idempotency",
+        "tags": [
+          "Courses & LMS"
+        ]
+      }
+    },
+    "/api/v1/courses/{id}/lessons/complete": {
+      "post": {
+        "operationId": "CoursesController_completeLesson",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Course UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson completed and progress updated."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark lesson completed in active course enrollment; automatically generates certificate upon 100%",
+        "tags": [
+          "Courses & LMS"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cv": {
+      "get": {
+        "operationId": "ToolkitController_listCvs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of CV versions."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all tabellarischer Lebenslauf versions created by the candidate",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "post": {
+        "operationId": "ToolkitController_createCv",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CV created successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new vocational-tailored Lebenslauf version",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cv/{id}": {
+      "get": {
+        "operationId": "ToolkitController_getCvById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "CV Version ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get single Lebenslauf version by ID",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "put": {
+        "operationId": "ToolkitController_updateCv",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "CV Version ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an existing Lebenslauf version",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "delete": {
+        "operationId": "ToolkitController_deleteCv",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "CV Version ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a Lebenslauf version",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cv/{id}/primary": {
+      "patch": {
+        "operationId": "ToolkitController_setPrimaryCv",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "CV Version ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set a Lebenslauf as the primary default CV for one-click job applications",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cv/{id}/duplicate": {
+      "post": {
+        "operationId": "ToolkitController_duplicateCv",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Source CV Version ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Duplicate an existing CV version for a different vocational specialization",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cv/{id}/render": {
+      "get": {
+        "operationId": "ToolkitController_renderCvHtml",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "CV Version ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Render DIN 5008 print-ready HTML for the CV",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cover-letters": {
+      "get": {
+        "operationId": "ToolkitController_listCoverLetters",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of cover letters."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all DIN 5008 cover letters",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "post": {
+        "operationId": "ToolkitController_createCoverLetter",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Cover letter created successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new DIN 5008 compliant cover letter",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cover-letters/{id}": {
+      "get": {
+        "operationId": "ToolkitController_getCoverLetterById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Cover Letter ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get single cover letter by ID",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "put": {
+        "operationId": "ToolkitController_updateCoverLetter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Cover Letter ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an existing cover letter",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "delete": {
+        "operationId": "ToolkitController_deleteCoverLetter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Cover Letter ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a cover letter",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/cover-letters/{id}/render": {
+      "get": {
+        "operationId": "ToolkitController_renderCoverLetterHtml",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Cover Letter ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Render DIN 5008 compliant print-ready HTML for the cover letter",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/documents": {
+      "get": {
+        "operationId": "ToolkitController_listDocuments",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Category filter e.g. LANGUAGE_CERTIFICATE",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List uploaded applicant documents, optionally filtered by category",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "post": {
+        "operationId": "ToolkitController_uploadDocument",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Document registered."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register an uploaded verified document in the applicant vault",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/documents/stats": {
+      "get": {
+        "operationId": "ToolkitController_getDocumentStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get summary statistics of document vault (count, storage size, categories)",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/documents/{id}": {
+      "delete": {
+        "operationId": "ToolkitController_deleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a document from the vault",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/checklists": {
+      "get": {
+        "operationId": "ToolkitController_getChecklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get embassy visa & interview readiness checklist with progress metrics",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "post": {
+        "operationId": "ToolkitController_createChecklistItem",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a custom task to the preparation checklist",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/checklists/{id}": {
+      "put": {
+        "operationId": "ToolkitController_updateChecklistItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Checklist Item ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update status or details of a checklist task",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      },
+      "delete": {
+        "operationId": "ToolkitController_deleteChecklistItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Checklist Item ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a task from the checklist",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/toolkit/checklists/reset": {
+      "post": {
+        "operationId": "ToolkitController_resetChecklist",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reset checklist to standard official German visa & interview template (10 items)",
+        "tags": [
+          "Application Toolkit (DIN 5008 & Documents)"
+        ]
+      }
+    },
+    "/api/v1/speaking/profile": {
+      "get": {
+        "operationId": "SpeakingController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Speaking profile returned."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user speaking partner profile and speaking stats",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      },
+      "put": {
+        "operationId": "SpeakingController_updateProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update speaking profile, CEFR level, gender filter and availability",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/matchmake": {
+      "post": {
+        "operationId": "SpeakingController_matchmake",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Match found or waiting room created."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Join matchmaking pool or find compatible peer for German speaking practice",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/sessions/{id}": {
+      "get": {
+        "operationId": "SpeakingController_getSessionById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session UUID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get details and participant info of a speaking session",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/rooms/{roomId}": {
+      "get": {
+        "operationId": "SpeakingController_getSessionByRoomId",
+        "parameters": [
+          {
+            "name": "roomId",
+            "required": true,
+            "in": "path",
+            "description": "Room identifier (e.g. room_spk_...)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get speaking session by unique WebRTC roomId",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/sessions/{id}/start": {
+      "post": {
+        "operationId": "SpeakingController_startSessionCall",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start speaking session call (transitions status to ACTIVE)",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/sessions/{id}/complete": {
+      "post": {
+        "operationId": "SpeakingController_completeSession",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Complete speaking session and award +25 virtual coins to both learners",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/sessions/{id}/cancel": {
+      "post": {
+        "operationId": "SpeakingController_cancelSession",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel waiting or matched speaking session",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/rooms/{roomId}/signal": {
+      "post": {
+        "operationId": "SpeakingController_postSignalingMessage",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send WebRTC signaling message (SDP offer, answer, or ICE candidate)",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      },
+      "get": {
+        "operationId": "SpeakingController_pollSignalingMessages",
+        "parameters": [
+          {
+            "name": "since",
+            "required": false,
+            "in": "query",
+            "description": "Timestamp in ms to only fetch newer signals",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Poll incoming WebRTC signaling messages from the remote peer",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/prompts": {
+      "get": {
+        "operationId": "SpeakingController_listPrompts",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "VOCATIONAL_INTERVIEW",
+                "HEALTHCARE_NURSING",
+                "IT_SOFTWARE",
+                "HOSPITALITY_HOTEL",
+                "DAILY_LIFE_GERMANY",
+                "GENERAL_CONVERSATION"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "A1",
+                "A2",
+                "B1",
+                "B2",
+                "C1",
+                "C2"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List situational vocational dialog cards and roleplays",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/prompts/{id}": {
+      "get": {
+        "operationId": "SpeakingController_getPromptById",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get single vocational dialog card by ID",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/sessions/{id}/rate": {
+      "post": {
+        "operationId": "SpeakingController_submitRating",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit feedback and star rating for peer speaking partner",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/speaking/sessions/{id}/report": {
+      "post": {
+        "operationId": "SpeakingController_submitReport",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit safety or inappropriate behavior report for moderation review",
+        "tags": [
+          "Speaking Practice Partner & WebRTC Calls"
+        ]
+      }
+    },
+    "/api/v1/coins/wallet": {
+      "get": {
+        "operationId": "CoinsController_getWallet",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Coin wallet returned."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user virtual coin wallet, balance, and streak status",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/transactions": {
+      "get": {
+        "operationId": "CoinsController_getTransactions",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "REWARD_WELCOME_BONUS",
+                "REWARD_QUIZ",
+                "REWARD_SPEAKING",
+                "REWARD_DAILY_STREAK",
+                "PURCHASE_COIN_PACK",
+                "SPEND_COURSE",
+                "SPEND_MOCK_INTERVIEW",
+                "ADMIN_ADJUSTMENT"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get paginated immutable coin ledger transactions",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/claim-streak": {
+      "post": {
+        "operationId": "CoinsController_claimStreak",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Streak claimed or already claimed today."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Claim daily login streak bonus (+15 coins + milestone achievements)",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/packages": {
+      "get": {
+        "operationId": "CoinsController_getPackages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List available virtual coin packages and pricing in EUR",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/checkout": {
+      "post": {
+        "operationId": "CoinsController_createCheckout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Stripe checkout session created."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Initiate Stripe card checkout for purchasing virtual coin packs",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/webhook": {
+      "post": {
+        "operationId": "CoinsController_stripeWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Stripe payment gateway webhook receiver",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/badges": {
+      "get": {
+        "operationId": "CoinsController_getBadges",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all unlocked gamification badges and achievement milestones",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/coins/admin/adjust": {
+      "post": {
+        "operationId": "CoinsController_adminAdjust",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin manual credit or debit adjustment with audit trail",
+        "tags": [
+          "Coins & Gamification Economy"
+        ]
+      }
+    },
+    "/api/v1/dashboard/student": {
+      "get": {
+        "operationId": "DashboardController_getStudentDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Aggregated student progress metrics retrieved successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Candidate progress hub: aggregate German learning, jobs, courses, speaking & coins",
+        "tags": [
+          "Unified Dashboards & Administration"
+        ]
+      }
+    },
+    "/api/v1/dashboard/admin/overview": {
+      "get": {
+        "operationId": "DashboardController_getAdminOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Platform overview metrics retrieved successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin overview: global platform KPIs, active users, course enrollments, coin economy",
+        "tags": [
+          "Unified Dashboards & Administration"
+        ]
+      }
+    },
+    "/api/v1/dashboard/admin/moderation": {
+      "get": {
+        "operationId": "DashboardController_getModerationQueue",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "isResolved",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Moderation queue: list reported speaking sessions and incidents",
+        "tags": [
+          "Unified Dashboards & Administration"
+        ]
+      }
+    },
+    "/api/v1/dashboard/admin/moderation/{id}/resolve": {
+      "patch": {
+        "operationId": "DashboardController_resolveModerationReport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolve speaking moderation report and apply disciplinary actions",
+        "tags": [
+          "Unified Dashboards & Administration"
+        ]
+      }
+    },
+    "/api/v1/dashboard/admin/audit-logs": {
+      "get": {
+        "operationId": "DashboardController_getAuditLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Audit logs: paginated, filterable immutable administrative security logs",
+        "tags": [
+          "Unified Dashboards & Administration"
+        ]
+      }
+    },
+    "/api/v1/dashboard/admin/health": {
+      "get": {
+        "operationId": "DashboardController_getSystemHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "System health: real-time database latency, memory footprint, uptime & subsystem probes",
+        "tags": [
+          "Unified Dashboards & Administration"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Ausbildung Preparation Portal — API",
+    "description": "Enterprise-grade REST API backend supporting Next.js web application and future mobile clients (Flutter / React Native).",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Access token issued upon authentication."
+      }
+    },
+    "schemas": {}
+  }
+}

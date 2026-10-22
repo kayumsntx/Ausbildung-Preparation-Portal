@@ -1,7 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD, Reflector } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
@@ -12,6 +12,7 @@ import { ToolkitModule } from './modules/toolkit/toolkit.module.js';
 import { SpeakingModule } from './modules/speaking/speaking.module.js';
 import { CoinsModule } from './modules/coins/coins.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard.js';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor.js';
@@ -52,9 +53,10 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     DashboardModule,
   ],
   providers: [
+    Reflector,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
     {
       provide: APP_FILTER,
