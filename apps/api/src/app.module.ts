@@ -10,6 +10,7 @@ import { CoursesModule } from './modules/courses/courses.module.js';
 import { ToolkitModule } from './modules/toolkit/toolkit.module.js';
 import { SpeakingModule } from './modules/speaking/speaking.module.js';
 import { CoinsModule } from './modules/coins/coins.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware.js';
@@ -29,6 +30,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     ToolkitModule,
     SpeakingModule,
     CoinsModule,
+    DashboardModule,
   ],
   providers: [
     {

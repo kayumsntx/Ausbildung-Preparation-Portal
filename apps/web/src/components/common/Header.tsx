@@ -18,6 +18,8 @@ import {
   HelpCircle,
   Info,
   FileText,
+  LayoutDashboard,
+  Shield,
 } from 'lucide-react';
 
 export function Header() {
@@ -27,12 +29,14 @@ export function Header() {
 
   const navigation = [
     { name: t.nav.home, href: '/' },
+    { name: t.nav.dashboard || 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: t.nav.germanLearning, href: '/german-learning', icon: BookOpen },
     { name: t.nav.jobSearch, href: '/jobs', icon: Briefcase },
     { name: t.nav.courses, href: '/courses', icon: GraduationCap },
     { name: t.nav.toolkit, href: '/toolkit', icon: FileText },
     { name: t.nav.speaking, href: '/speaking', icon: Video },
     { name: t.nav.pricing, href: '/pricing', icon: Coins },
+    { name: 'Admin', href: '/admin', icon: Shield },
   ];
 
   const secondaryNav = [
