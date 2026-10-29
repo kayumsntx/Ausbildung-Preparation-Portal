@@ -2,22 +2,74 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Mail, Lock, ArrowRight, GraduationCap, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // In Phase 1 UI shell, simulate submission
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    const defaultBase =
+      typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'https://ausbildung-preparation-portal.onrender.com/api/v1'
+        : 'http://localhost:4000/api/v1';
+    const rawBase = (process.env.NEXT_PUBLIC_API_URL || defaultBase).trim().replace(/\/+$/, '');
+    const apiUrl = rawBase.endsWith('/api/v1')
+      ? `${rawBase}/auth/login`
+      : `${rawBase}/api/v1/auth/login`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+      console.log('Login API response:', data);
+
+      if (!response.ok) {
+        const message =
+          (Array.isArray(data?.message) ? data.message.join(', ') : data?.message) ||
+          data?.error?.message ||
+          data?.error ||
+          'Invalid email or password. Please try again.';
+        throw new Error(message);
+      }
+
+      try {
+        const payloadData = data?.data || data;
+        if (payloadData?.accessToken) {
+          localStorage.setItem('ausbildung_access_token', payloadData.accessToken);
+        }
+        if (payloadData?.user) {
+          localStorage.setItem('ausbildung_user', JSON.stringify(payloadData.user));
+        }
+      } catch {
+        // Ignore storage errors
+      }
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Login request error:', err);
+      setErrorMessage(err?.message || 'Unable to connect to authentication server. Please try again.');
+    } finally {
       setIsLoading(false);
-      alert('Phase 1 UI Shell: Full credentials authentication and JWT session setup will be wired in Phase 2.');
-    }, 600);
+    }
   };
 
   return (
@@ -39,6 +91,13 @@ export default function LoginPage() {
         </div>
 
         <div className="p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg space-y-6">
+          {errorMessage && (
+            <div className="p-3.5 rounded-xl text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-relaxed">{errorMessage}</div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -101,8 +160,17 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full py-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Signing In...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

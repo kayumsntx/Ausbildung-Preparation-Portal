@@ -9,7 +9,7 @@ export default function RegisterPage() {
     name: '',
     email: '',
     password: '',
-    targetField: 'Pflegefachmann (Nursing)',
+    targetField: 'Pflegefachmann / Pflegefachfrau (Nursing)',
     referralCode: '',
     agreeTerms: false,
   });
@@ -29,7 +29,11 @@ export default function RegisterPage() {
     setSuccessMessage(null);
 
     // Normalize API endpoint URL
-    const rawBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1').trim().replace(/\/+$/, '');
+    const defaultBase =
+      typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'https://ausbildung-preparation-portal.onrender.com/api/v1'
+        : 'http://localhost:4000/api/v1';
+    const rawBase = (process.env.NEXT_PUBLIC_API_URL || defaultBase).trim().replace(/\/+$/, '');
     const apiUrl = rawBase.endsWith('/api/v1')
       ? `${rawBase}/auth/register`
       : `${rawBase}/api/v1/auth/register`;
@@ -72,7 +76,19 @@ export default function RegisterPage() {
         throw new Error(message);
       }
 
-      setSuccessMessage('Registration successful! Please check your email to verify your account.');
+      try {
+        const payloadData = data?.data || data;
+        if (payloadData?.accessToken) {
+          localStorage.setItem('ausbildung_access_token', payloadData.accessToken);
+        }
+        if (payloadData?.user) {
+          localStorage.setItem('ausbildung_user', JSON.stringify(payloadData.user));
+        }
+      } catch {
+        // Ignore storage errors in restricted environments
+      }
+
+      setSuccessMessage('Registration successful! Your account has been created.');
     } catch (err: any) {
       console.error('Registration request error:', err);
       setErrorMessage(err?.message || 'Unable to connect to the registration server. Please try again.');

@@ -30,16 +30,18 @@ export class AuthController {
     res.cookie(REFRESH_TOKEN_COOKIE_NAME, token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict',
+      sameSite: isProduction ? 'none' : 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/api/v1/auth',
     });
   }
 
   private clearRefreshCookie(res: Response) {
+    const isProduction = process.env.NODE_ENV === 'production';
     res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
       httpOnly: true,
-      sameSite: 'strict',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'strict',
       path: '/api/v1/auth',
     });
   }

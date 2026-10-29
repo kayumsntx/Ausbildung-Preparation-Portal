@@ -25,6 +25,7 @@ async function bootstrap() {
         includeSubDomains: true,
         preload: true,
       },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
       xFrameOptions: { action: 'deny' },
     }),
   );
