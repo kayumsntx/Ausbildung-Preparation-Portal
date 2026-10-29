@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Mail, Lock, ArrowRight, GraduationCap, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setAuthSession } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -44,16 +46,20 @@ export default function LoginPage() {
         throw new Error(message);
       }
 
-      try {
-        const payloadData = data?.data || data;
-        if (payloadData?.accessToken) {
-          localStorage.setItem('ausbildung_access_token', payloadData.accessToken);
+      const payloadData = data?.data || data;
+      if (payloadData?.user && payloadData?.accessToken) {
+        setAuthSession(payloadData.user, payloadData.accessToken);
+      } else {
+        try {
+          if (payloadData?.accessToken) {
+            localStorage.setItem('ausbildung_access_token', payloadData.accessToken);
+          }
+          if (payloadData?.user) {
+            localStorage.setItem('ausbildung_user', JSON.stringify(payloadData.user));
+          }
+        } catch {
+          // Ignore storage errors
         }
-        if (payloadData?.user) {
-          localStorage.setItem('ausbildung_user', JSON.stringify(payloadData.user));
-        }
-      } catch {
-        // Ignore storage errors
       }
 
       router.push('/dashboard');

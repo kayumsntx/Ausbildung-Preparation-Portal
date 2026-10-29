@@ -180,11 +180,28 @@ export class DashboardService {
       applications: {
         savedJobsCount: user.savedJobs.length,
         funnel: applicationFunnel,
+        items: user.jobApplications.map((app) => ({
+          id: app.id,
+          title: app.customRole || app.job?.title || 'Vocational Position',
+          employer: app.customCompany || app.job?.employer || 'Ausbildung Employer',
+          city: app.city || app.job?.city || 'Germany',
+          status: app.status,
+          stipend: app.job?.stipendYear1 || 'Standard Tariff',
+          interviewDate: app.interviewDate ? app.interviewDate.toISOString() : null,
+          appliedAt: (app.appliedAt || app.createdAt).toISOString(),
+        })),
       },
       courses: {
         activeEnrollments,
         completedCourses,
         certificates,
+        items: user.courseEnrollments.map((enrollment) => ({
+          id: enrollment.id,
+          courseId: enrollment.courseId,
+          title: enrollment.course.title,
+          status: enrollment.status,
+          progressPercentage: enrollment.progressPercentage,
+        })),
       },
       speaking: {
         totalSessions: hostedCount + joinedCount,

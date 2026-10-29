@@ -1,24 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-function getBackendBaseUrl(): string {
+function getCandidateBaseUrls(): string[] {
   const configured = (
     process.env.BACKEND_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    'https://ausbildung-preparation-portal.onrender.com'
+    ''
   )
     .trim()
     .replace(/\/+$/, '')
     .replace(/\/api\/v1$/, '');
 
-  // Avoid proxying to localhost when running in a non-local production container
+  const prodUrl = 'https://ausbildung-preparation-portal.onrender.com';
+  const localUrl = 'http://localhost:4000';
+
   if (
     process.env.RENDER ||
-    (process.env.NODE_ENV === 'production' && configured.includes('localhost'))
+    (process.env.NODE_ENV === 'production' && (!configured || configured.includes('localhost')))
   ) {
-    return 'https://ausbildung-preparation-portal.onrender.com';
+    return [configured && !configured.includes('localhost') ? configured : prodUrl];
   }
 
-  return configured || 'https://ausbildung-preparation-portal.onrender.com';
+  if (configured) {
+    return configured === prodUrl ? [prodUrl] : [configured, prodUrl];
+  }
+
+  // In local development without explicit env var, try local NestJS backend first, then Render
+  return [localUrl, prodUrl];
 }
 
 async function proxyRequest(
@@ -28,7 +35,7 @@ async function proxyRequest(
   const { path } = await context.params;
   const joinedPath = Array.isArray(path) ? path.join('/') : '';
   const search = req.nextUrl.search || '';
-  const targetUrl = `${getBackendBaseUrl()}/api/v1/${joinedPath}${search}`;
+  const baseUrls = getCandidateBaseUrls();
 
   const headers = new Headers();
   const contentType = req.headers.get('content-type');
@@ -50,50 +57,57 @@ async function proxyRequest(
   const hasBody = method !== 'GET' && method !== 'HEAD';
   const bodyText = hasBody ? await req.text() : undefined;
 
-  try {
-    const upstreamResponse = await fetch(targetUrl, {
-      method,
-      headers,
-      body: hasBody && bodyText ? bodyText : undefined,
-      cache: 'no-store',
-    });
+  let lastError: any = null;
 
-    const responseText = await upstreamResponse.text();
-    const responseHeaders = new Headers();
+  for (const baseUrl of baseUrls) {
+    const targetUrl = `${baseUrl}/api/v1/${joinedPath}${search}`;
+    try {
+      const upstreamResponse = await fetch(targetUrl, {
+        method,
+        headers,
+        body: hasBody && bodyText ? bodyText : undefined,
+        cache: 'no-store',
+      });
 
-    const upstreamContentType = upstreamResponse.headers.get('content-type');
-    if (upstreamContentType) {
-      responseHeaders.set('Content-Type', upstreamContentType);
+      const responseText = await upstreamResponse.text();
+      const responseHeaders = new Headers();
+
+      const upstreamContentType = upstreamResponse.headers.get('content-type');
+      if (upstreamContentType) {
+        responseHeaders.set('Content-Type', upstreamContentType);
+      }
+
+      const upstreamCorrelationId = upstreamResponse.headers.get('x-correlation-id');
+      if (upstreamCorrelationId) {
+        responseHeaders.set('X-Correlation-ID', upstreamCorrelationId);
+      }
+
+      const setCookie = upstreamResponse.headers.get('set-cookie');
+      if (setCookie) {
+        responseHeaders.set('Set-Cookie', setCookie);
+      }
+
+      return new NextResponse(responseText, {
+        status: upstreamResponse.status,
+        headers: responseHeaders,
+      });
+    } catch (err: any) {
+      lastError = err;
     }
-
-    const upstreamCorrelationId = upstreamResponse.headers.get('x-correlation-id');
-    if (upstreamCorrelationId) {
-      responseHeaders.set('X-Correlation-ID', upstreamCorrelationId);
-    }
-
-    const setCookie = upstreamResponse.headers.get('set-cookie');
-    if (setCookie) {
-      responseHeaders.set('Set-Cookie', setCookie);
-    }
-
-    return new NextResponse(responseText, {
-      status: upstreamResponse.status,
-      headers: responseHeaders,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: 'UPSTREAM_UNREACHABLE',
-          message:
-            err?.message ||
-            'Unable to reach the backend API service. Please try again in a moment.',
-        },
-      },
-      { status: 502 },
-    );
   }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: 'UPSTREAM_UNREACHABLE',
+        message:
+          lastError?.message ||
+          'Unable to reach the backend API service. Please try again in a moment.',
+      },
+    },
+    { status: 502 },
+  );
 }
 
 export async function GET(

@@ -2,9 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Mail, Lock, User, GraduationCap, ArrowRight, Gift, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { setAuthSession } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -70,19 +74,24 @@ export default function RegisterPage() {
         throw new Error(message);
       }
 
-      try {
-        const payloadData = data?.data || data;
-        if (payloadData?.accessToken) {
-          localStorage.setItem('ausbildung_access_token', payloadData.accessToken);
+      const payloadData = data?.data || data;
+      if (payloadData?.user && payloadData?.accessToken) {
+        setAuthSession(payloadData.user, payloadData.accessToken);
+      } else {
+        try {
+          if (payloadData?.accessToken) {
+            localStorage.setItem('ausbildung_access_token', payloadData.accessToken);
+          }
+          if (payloadData?.user) {
+            localStorage.setItem('ausbildung_user', JSON.stringify(payloadData.user));
+          }
+        } catch {
+          // Ignore storage errors in restricted environments
         }
-        if (payloadData?.user) {
-          localStorage.setItem('ausbildung_user', JSON.stringify(payloadData.user));
-        }
-      } catch {
-        // Ignore storage errors in restricted environments
       }
 
-      setSuccessMessage('Registration successful! Your account has been created.');
+      setSuccessMessage('Registration successful! Signing you in and redirecting to your dashboard...');
+      router.push('/dashboard');
     } catch (err: any) {
       console.error('Registration request error:', err);
       setErrorMessage(err?.message || 'Unable to connect to the registration server. Please try again.');

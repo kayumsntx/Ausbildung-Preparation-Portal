@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import {
   FileText,
   Mail,
@@ -83,6 +84,7 @@ interface ChecklistItem {
 }
 
 export default function ApplicationToolkitPage() {
+  const { user, displayName } = useAuth();
   const [activeTab, setActiveTab] = useState<'cv' | 'coverLetter' | 'vault' | 'checklist'>('cv');
   const [copiedNotification, setCopiedNotification] = useState(false);
 
@@ -100,6 +102,20 @@ export default function ApplicationToolkitPage() {
     email: 'max.mustermann@example.com',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
   });
+
+  useEffect(() => {
+    if (user) {
+      setPersonalInfo((prev) => ({
+        ...prev,
+        fullName: displayName || prev.fullName,
+        email: user.email || prev.email,
+        phone: user.profile?.phoneNumber || prev.phone,
+      }));
+      if (user.profile?.targetAusbildungField) {
+        setTargetVocation(user.profile.targetAusbildungField);
+      }
+    }
+  }, [user, displayName]);
 
   const [educationList, setEducationList] = useState<EducationItem[]>([
     {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   GraduationCap,
@@ -17,123 +17,364 @@ import {
   BookOpen,
   ArrowUpRight,
   ShieldCheck,
+  Loader2,
+  User as UserIcon,
+  Mail,
+  CheckCircle2,
+  RefreshCw,
+  LogIn,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
+
+interface DashboardApplicationItem {
+  id: string;
+  title: string;
+  employer: string;
+  city: string;
+  status: string;
+  stipend: string;
+  interviewDate: string | null;
+  appliedAt: string;
+}
+
+interface DashboardCourseItem {
+  id: string;
+  courseId: string;
+  title: string;
+  status: string;
+  progressPercentage: number;
+}
+
+interface DashboardCertificateItem {
+  id: string;
+  courseTitle: string;
+  verificationCode: string;
+  sha256Hash: string;
+  issuedAt: string;
+}
+
+interface StudentDashboardData {
+  candidate: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      preferredLanguage?: string | null;
+      targetAusbildungField?: string | null;
+      phoneNumber?: string | null;
+    } | null;
+    roles: string[];
+  };
+  learning: {
+    completedLessonsCount: number;
+    inProgressLessonsCount: number;
+    levelCounts: Record<string, number>;
+    totalQuizAttempts: number;
+    avgQuizScore: number;
+  };
+  applications: {
+    savedJobsCount: number;
+    funnel: {
+      PLANNED: number;
+      APPLIED: number;
+      INTERVIEW: number;
+      OFFER: number;
+      REJECTED: number;
+      WITHDRAWN: number;
+      total: number;
+    };
+    items?: DashboardApplicationItem[];
+  };
+  courses: {
+    activeEnrollments: number;
+    completedCourses: number;
+    certificates: DashboardCertificateItem[];
+    items?: DashboardCourseItem[];
+  };
+  speaking: {
+    totalSessions: number;
+    hostedCount: number;
+    joinedCount: number;
+    averageRating: number;
+    totalRatingsReceived: number;
+  };
+  wallet: {
+    balance: number;
+    streakDays: number;
+    lastStreakClaim: string | null;
+    badges: Array<{ badgeType: string; unlockedAt: string }>;
+  };
+  recentActivity: Array<{
+    type: string;
+    title: string;
+    timestamp: string;
+  }>;
+}
+
+function getStatusBadgeColor(status: string): string {
+  switch (status) {
+    case 'INTERVIEW':
+      return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+    case 'OFFER':
+      return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+    case 'APPLIED':
+      return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+    case 'REJECTED':
+      return 'bg-red-500/10 text-red-500 border-red-500/20';
+    default:
+      return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+  }
+}
+
+function formatDateShort(isoString?: string | null): string {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return isoString;
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 export default function StudentDashboardPage() {
-  const { t } = useLanguage();
+  useLanguage();
+  const { user, accessToken, isAuthenticated, isLoading: authLoading, displayName } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'learning' | 'applications' | 'courses' | 'speaking'>('overview');
+  const [dashboardData, setDashboardData] = useState<StudentDashboardData | null>(null);
+  const [fetching, setFetching] = useState<boolean>(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Realistic mock data reflecting backend getStudentDashboard endpoint
-  const candidate = {
-    name: 'Rahim Khan',
-    email: 'rahim.khan@example.de',
-    targetField: 'Pflegefachkraft (General Nursing)',
-    targetCity: 'München, Bayern',
-    currentLevel: 'B1',
-    walletBalance: 450,
-    streakDays: 7,
-    avgQuizAccuracy: 88,
-    completedLessons: 42,
-    totalLessons: 60,
-    cefrBreakdown: {
-      A1: { completed: 20, total: 20, pct: 100 },
-      A2: { completed: 18, total: 20, pct: 90 },
-      B1: { completed: 4, total: 20, pct: 20 },
-      B2: { completed: 0, total: 20, pct: 0 },
-    },
-    applications: [
-      {
-        id: 'app-1',
-        title: 'Ausbildung zum Pflegefachmann (m/w/d)',
-        employer: 'Klinikum Großhadern München',
-        city: 'München',
-        status: 'INTERVIEW',
-        statusColor: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-        interviewDate: '28. Okt 2026, 10:30 CET',
-        stipend: '€1,340 / month',
-      },
-      {
-        id: 'app-2',
-        title: 'Auszubildender Pflege (m/w/d)',
-        employer: 'Asklepios Kliniken Hamburg',
-        city: 'Hamburg',
-        status: 'APPLIED',
-        statusColor: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-        appliedDate: '18. Okt 2026',
-        stipend: '€1,280 / month',
-      },
-      {
-        id: 'app-3',
-        title: 'Pflegefachassistent Ausbildung 2027',
-        employer: 'Charité Universitätsmedizin Berlin',
-        city: 'Berlin',
-        status: 'PLANNED',
-        statusColor: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-        stipend: '€1,310 / month',
-      },
-    ],
-    courses: [
-      {
-        id: 'c-1',
-        title: 'Medizinisches Deutsch für Pflegeberufe',
-        progress: 100,
-        certificate: {
-          code: 'CERT-2026-NURS-9921',
-          sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-          issuedDate: '15. Okt 2026',
+  const loadDashboard = useCallback(async () => {
+    if (!accessToken) return;
+    setFetching(true);
+    setFetchError(null);
+    try {
+      const res = await fetch('/api/v1/dashboard/student', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
         },
-      },
-      {
-        id: 'c-2',
-        title: 'German Workplace Culture & Labor Rights (BGB / ArbZG)',
-        progress: 65,
-        certificate: null,
-      },
-    ],
-    speaking: {
-      totalCalls: 8,
-      avgStars: 4.9,
-      receivedBadges: ['Sehr freundlich', 'Gute Aussprache', 'Hilfreich'],
-      recentPartner: 'Lukas M. (Native Speaker, Munich)',
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        throw new Error(
+          errBody?.message ||
+            errBody?.error?.message ||
+            `Could not load dashboard metrics (HTTP ${res.status})`,
+        );
+      }
+
+      const body = await res.json();
+      const payload: StudentDashboardData = body?.data || body;
+      setDashboardData(payload);
+    } catch (err: any) {
+      setFetchError(err?.message || 'Unable to load latest metrics from server.');
+    } finally {
+      setFetching(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      loadDashboard();
+    }
+  }, [isAuthenticated, accessToken, loadDashboard]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-[75vh] flex flex-col items-center justify-center gap-3 px-4">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+          Loading your authenticated profile...
+        </p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full glass-panel p-8 rounded-3xl border border-slate-200 dark:border-slate-800 text-center space-y-5 shadow-lg">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+            <LogIn className="w-6 h-6" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              Sign In Required
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Please sign in to your account or register a new candidate profile to view your live German progress, job applications, and coin wallet.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              href="/auth/login"
+              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/auth/register"
+              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              Create Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Derive real user & database values from AuthContext + backend response
+  const profile = dashboardData?.candidate?.profile || user.profile;
+  const fullName =
+    [profile?.firstName, profile?.lastName].filter(Boolean).join(' ').trim() ||
+    displayName ||
+    user.email;
+  const userEmail = dashboardData?.candidate?.email || user.email;
+  const targetField =
+    profile?.targetAusbildungField || 'Ausbildung Vocational Pathway in Germany';
+  const roles = dashboardData?.candidate?.roles || user.roles || ['STUDENT'];
+
+  const completedLessons = dashboardData?.learning?.completedLessonsCount ?? 0;
+  const totalLessons = 60;
+  const lessonProgressPct = Math.min(100, Math.round((completedLessons / totalLessons) * 100));
+
+  const levelCounts = dashboardData?.learning?.levelCounts || { A1: 0, A2: 0, B1: 0, B2: 0 };
+  const currentLevel =
+    (levelCounts.B2 ?? 0) > 0
+      ? 'B2'
+      : (levelCounts.B1 ?? 0) > 0
+      ? 'B1'
+      : (levelCounts.A2 ?? 0) > 0
+      ? 'A2'
+      : 'A1';
+
+  const cefrBreakdown = {
+    A1: {
+      completed: levelCounts.A1 ?? 0,
+      total: 15,
+      pct: Math.min(100, Math.round(((levelCounts.A1 ?? 0) / 15) * 100)),
     },
-    recentActivities: [
-      { type: 'COIN', title: '+50 Coins for 7-Day Flame Streak Milestone', time: '1 hour ago' },
-      { type: 'APPLICATION', title: 'Interview Invitation confirmed with Klinikum Großhadern', time: 'Yesterday' },
-      { type: 'QUIZ', title: 'Scored 90% in B1 Konjunktiv II Medical Practice Quiz', time: '2 days ago' },
-      { type: 'SPEAKING', title: 'Completed 15-min vocational dialog with Lukas M.', time: '3 days ago' },
-      { type: 'CERT', title: 'Earned digital SHA-256 certificate in Medical German', time: '7 days ago' },
-    ],
+    A2: {
+      completed: levelCounts.A2 ?? 0,
+      total: 15,
+      pct: Math.min(100, Math.round(((levelCounts.A2 ?? 0) / 15) * 100)),
+    },
+    B1: {
+      completed: levelCounts.B1 ?? 0,
+      total: 15,
+      pct: Math.min(100, Math.round(((levelCounts.B1 ?? 0) / 15) * 100)),
+    },
+    B2: {
+      completed: levelCounts.B2 ?? 0,
+      total: 15,
+      pct: Math.min(100, Math.round(((levelCounts.B2 ?? 0) / 15) * 100)),
+    },
   };
+
+  const walletBalance = dashboardData?.wallet?.balance ?? 0;
+  const streakDays = dashboardData?.wallet?.streakDays ?? 0;
+  const avgQuizAccuracy = dashboardData?.learning?.avgQuizScore ?? 0;
+  const totalQuizAttempts = dashboardData?.learning?.totalQuizAttempts ?? 0;
+
+  const speakingAvgStars = dashboardData?.speaking?.averageRating ?? 5.0;
+  const speakingTotalCalls = dashboardData?.speaking?.totalSessions ?? 0;
+  const unlockedBadges = dashboardData?.wallet?.badges ?? [];
+
+  const applicationsList = dashboardData?.applications?.items ?? [];
+  const savedJobsCount = dashboardData?.applications?.savedJobsCount ?? 0;
+  const applicationFunnel = dashboardData?.applications?.funnel ?? {
+    PLANNED: 0,
+    APPLIED: 0,
+    INTERVIEW: 0,
+    OFFER: 0,
+    REJECTED: 0,
+    WITHDRAWN: 0,
+    total: 0,
+  };
+
+  const coursesList = dashboardData?.courses?.items ?? [];
+  const certificatesList = dashboardData?.courses?.certificates ?? [];
+
+  const recentActivities =
+    dashboardData?.recentActivity && dashboardData.recentActivity.length > 0
+      ? dashboardData.recentActivity.map((act) => ({
+          type: act.type,
+          title: act.title,
+          time: formatDateShort(act.timestamp),
+        }))
+      : [
+          {
+            type: 'ACCOUNT',
+            title: `Account registered & connected (${userEmail})`,
+            time: formatDateShort(user.createdAt) || 'Active now',
+          },
+        ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Top Header & Greeting */}
+        {/* Top Header & Real User Greeting */}
         <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 blur-3xl -z-10 pointer-events-none" />
-          
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                Target Pathway: {candidate.targetField}
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Target Pathway: {targetField}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {roles.join(', ')}
+                </span>
               </div>
+
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Willkommen zurück, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">{candidate.name}</span>!
+                Willkommen,{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">
+                  {fullName}
+                </span>
+                !
               </h1>
-              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-                Track your German proficiency milestones, active vocational job applications in {candidate.targetCity}, and verified credentials.
-              </p>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+                <span className="inline-flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  {userEmail}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                  ID: {user.id.slice(0, 8)}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={loadDashboard}
+                disabled={fetching}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
+                title="Refresh live data from PostgreSQL"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${fetching ? 'animate-spin' : ''}`} />
+                <span>Sync</span>
+              </button>
               <Link
                 href="/german-learning"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
               >
                 <BookOpen className="w-4 h-4" />
-                Next German Lesson
+                Start German Lesson
               </Link>
               <Link
                 href="/jobs"
@@ -144,6 +385,12 @@ export default function StudentDashboardPage() {
               </Link>
             </div>
           </div>
+
+          {fetchError && (
+            <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400">
+              {fetchError}
+            </div>
+          )}
         </div>
 
         {/* Real-time KPI Metric Ribbon */}
@@ -156,15 +403,17 @@ export default function StudentDashboardPage() {
                 <GraduationCap className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-black">{candidate.currentLevel} Working</div>
+            <div className="text-2xl font-black">{currentLevel} Track</div>
             <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-              <span>{candidate.completedLessons}/{candidate.totalLessons} Lessons</span>
-              <span className="font-semibold text-blue-500">{Math.round((candidate.completedLessons / candidate.totalLessons) * 100)}%</span>
+              <span>
+                {completedLessons}/{totalLessons} Lessons
+              </span>
+              <span className="font-semibold text-blue-500">{lessonProgressPct}%</span>
             </div>
             <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
               <div
                 className="bg-blue-500 h-full rounded-full transition-all"
-                style={{ width: `${(candidate.completedLessons / candidate.totalLessons) * 100}%` }}
+                style={{ width: `${lessonProgressPct}%` }}
               />
             </div>
           </div>
@@ -177,10 +426,10 @@ export default function StudentDashboardPage() {
                 <Flame className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-black text-amber-500">{candidate.streakDays} Days</div>
+            <div className="text-2xl font-black text-amber-500">{streakDays} Days</div>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              +50 Bonus Coins Unlocked!
+              {streakDays > 0 ? 'Keep your daily streak going!' : 'Complete a lesson to start your streak'}
             </p>
           </div>
 
@@ -192,7 +441,7 @@ export default function StudentDashboardPage() {
                 <Coins className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-black text-yellow-500">{candidate.walletBalance} Coins</div>
+            <div className="text-2xl font-black text-yellow-500">{walletBalance} Coins</div>
             <Link
               href="/pricing"
               className="mt-2 text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center gap-1"
@@ -209,9 +458,9 @@ export default function StudentDashboardPage() {
                 <Video className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-black text-emerald-500">{candidate.speaking.avgStars} ★</div>
+            <div className="text-2xl font-black text-emerald-500">{speakingAvgStars} ★</div>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              {candidate.speaking.totalCalls} Tandem Calls Completed
+              {speakingTotalCalls} Tandem Calls Completed
             </p>
           </div>
         </div>
@@ -221,8 +470,8 @@ export default function StudentDashboardPage() {
           {[
             { id: 'overview', label: 'Dashboard Overview' },
             { id: 'learning', label: 'German Curriculum' },
-            { id: 'applications', label: 'Job Applications' },
-            { id: 'courses', label: 'Certificates & Courses' },
+            { id: 'applications', label: `Job Applications (${applicationFunnel.total})` },
+            { id: 'courses', label: `Certificates & Courses (${coursesList.length})` },
             { id: 'speaking', label: 'Speaking Practice' },
           ].map((tab) => (
             <button
@@ -252,38 +501,56 @@ export default function StudentDashboardPage() {
                     <h2 className="text-base font-bold">Active Application Pipeline</h2>
                   </div>
                   <Link href="/jobs" className="text-xs font-semibold text-blue-500 hover:underline flex items-center gap-1">
-                    Full Tracker <ChevronRight className="w-3.5 h-3.5" />
+                    Full Tracker ({savedJobsCount} Saved) <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
 
-                <div className="space-y-3">
-                  {candidate.applications.map((app) => (
-                    <div
-                      key={app.id}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-blue-500/40 transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${app.statusColor}`}>
-                            {app.status}
-                          </span>
-                          <span className="text-xs text-slate-500">{app.city}</span>
+                {applicationsList.length > 0 ? (
+                  <div className="space-y-3">
+                    {applicationsList.map((app) => (
+                      <div
+                        key={app.id}
+                        className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-blue-500/40 transition-colors"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[11px] font-bold border ${getStatusBadgeColor(
+                                app.status,
+                              )}`}
+                            >
+                              {app.status}
+                            </span>
+                            <span className="text-xs text-slate-500">{app.city}</span>
+                          </div>
+                          <h3 className="text-sm font-bold">{app.title}</h3>
+                          <p className="text-xs text-slate-500">{app.employer}</p>
                         </div>
-                        <h3 className="text-sm font-bold">{app.title}</h3>
-                        <p className="text-xs text-slate-500">{app.employer}</p>
-                      </div>
 
-                      <div className="text-right sm:self-center flex sm:flex-col items-center sm:items-end justify-between gap-1">
-                        <span className="text-xs font-semibold text-emerald-500">{app.stipend}</span>
-                        {app.interviewDate && (
-                          <span className="text-[11px] font-medium text-amber-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {app.interviewDate}
-                          </span>
-                        )}
+                        <div className="text-right sm:self-center flex sm:flex-col items-center sm:items-end justify-between gap-1">
+                          <span className="text-xs font-semibold text-emerald-500">{app.stipend}</span>
+                          {app.interviewDate && (
+                            <span className="text-[11px] font-medium text-amber-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {formatDateShort(app.interviewDate)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      You have not tracked any Ausbildung job applications yet. Search live verified German openings and add them to your pipeline.
+                    </p>
+                    <Link
+                      href="/jobs"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    >
+                      Explore German Jobs <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* CEFR Level Breakdown Card */}
@@ -293,11 +560,13 @@ export default function StudentDashboardPage() {
                     <BookOpen className="w-5 h-5 text-indigo-500" />
                     <h2 className="text-base font-bold">CEFR German Learning Journey</h2>
                   </div>
-                  <span className="text-xs font-medium text-slate-500">Quiz Accuracy: {candidate.avgQuizAccuracy}%</span>
+                  <span className="text-xs font-medium text-slate-500">
+                    Quiz Accuracy: {avgQuizAccuracy}% ({totalQuizAttempts} attempts)
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {Object.entries(candidate.cefrBreakdown).map(([lvl, data]) => (
+                  {Object.entries(cefrBreakdown).map(([lvl, data]) => (
                     <div
                       key={lvl}
                       className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 text-center space-y-2"
@@ -325,11 +594,11 @@ export default function StudentDashboardPage() {
               <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-5 h-5 text-blue-500" />
-                  <h2 className="text-base font-bold">Recent Milestones</h2>
+                  <h2 className="text-base font-bold">Recent Activity</h2>
                 </div>
 
                 <div className="space-y-4">
-                  {candidate.recentActivities.map((act, idx) => (
+                  {recentActivities.map((act, idx) => (
                     <div key={idx} className="flex gap-3 text-xs">
                       <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
                       <div className="space-y-0.5">
@@ -352,23 +621,45 @@ export default function StudentDashboardPage() {
                   Official certificates generated with cryptographic SHA-256 verification hashes recognized by German employers.
                 </p>
 
-                {candidate.courses.filter(c => c.certificate).map(c => (
-                  <div key={c.id} className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{c.title}</span>
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    </div>
-                    <p className="text-[10px] font-mono text-slate-500 break-all">
-                      Hash: {c.certificate?.sha256.slice(0, 24)}...
-                    </p>
-                    <div className="flex items-center justify-between text-[11px] pt-1">
-                      <span className="text-slate-400">{c.certificate?.issuedDate}</span>
-                      <Link href="/courses" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">
-                        View Certificate
-                      </Link>
-                    </div>
+                {certificatesList.length > 0 ? (
+                  <div className="space-y-3">
+                    {certificatesList.map((cert) => (
+                      <div
+                        key={cert.id}
+                        className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            {cert.courseTitle}
+                          </span>
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        </div>
+                        <p className="text-[10px] font-mono text-slate-500 break-all">
+                          Hash: {cert.sha256Hash.slice(0, 24)}...
+                        </p>
+                        <div className="flex items-center justify-between text-[11px] pt-1">
+                          <span className="text-slate-400">{formatDateShort(cert.issuedAt)}</span>
+                          <Link
+                            href="/courses"
+                            className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+                          >
+                            View Certificate
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                    <p>No certificates earned yet. Complete a vocational course to unlock your SHA-256 certificate.</p>
+                    <Link
+                      href="/courses"
+                      className="inline-block text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+                    >
+                      Browse Vocational Courses →
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -380,7 +671,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">German Language Curriculum (A1–B2)</h2>
-                <p className="text-xs text-slate-500">Interactive grammar, vocabulary lists with native pronunciation, and server-scored quizzes.</p>
+                <p className="text-xs text-slate-500">
+                  Interactive grammar, vocabulary lists with native pronunciation, and server-scored quizzes.
+                </p>
               </div>
               <Link
                 href="/german-learning"
@@ -391,31 +684,36 @@ export default function StudentDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['A1 Beginner', 'A2 Elementary', 'B1 Intermediate', 'B2 Vocational'].map((lvl, index) => (
-                <div key={lvl} className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm">{lvl}</span>
-                    <span className="text-xs font-semibold text-blue-500">
-                      {index === 0 ? '100% Completed' : index === 1 ? '90% In Progress' : index === 2 ? '20% Active' : 'Locked'}
-                    </span>
+              {(
+                [
+                  { code: 'A1', title: 'A1 Beginner', desc: 'Essential greetings, DIN date formats, introducing yourself in Germany.' },
+                  { code: 'A2', title: 'A2 Elementary', desc: 'Daily routines, public transport, doctor visits, vocational vocabulary.' },
+                  { code: 'B1', title: 'B1 Intermediate', desc: 'Workplace safety, patient handovers, technical manuals, email writing.' },
+                  { code: 'B2', title: 'B2 Vocational', desc: 'Advanced negotiation, German labor contracts, complex documentation.' },
+                ] as const
+              ).map((lvl) => {
+                const stats = cefrBreakdown[lvl.code];
+                return (
+                  <div
+                    key={lvl.code}
+                    className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm">{lvl.title}</span>
+                      <span className="text-xs font-semibold text-blue-500">
+                        {stats.completed}/{stats.total} Lessons ({stats.pct}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-full rounded-full"
+                        style={{ width: `${stats.pct}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500">{lvl.desc}</p>
                   </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-full rounded-full"
-                      style={{ width: `${index === 0 ? 100 : index === 1 ? 90 : index === 2 ? 20 : 0}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {index === 0
-                      ? 'Essential greetings, DIN date formats, introducing yourself in Germany.'
-                      : index === 1
-                      ? 'Daily routines, public transport, doctor visits, vocational vocabulary.'
-                      : index === 2
-                      ? 'Workplace safety, patient handovers, technical manuals, email writing.'
-                      : 'Advanced negotiation, German labor contracts, complex documentation.'}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -426,7 +724,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">Ausbildung Job Pipeline</h2>
-                <p className="text-xs text-slate-500">Track and manage every stage of your vocational training applications in Germany.</p>
+                <p className="text-xs text-slate-500">
+                  Track and manage every stage of your vocational training applications in Germany.
+                </p>
               </div>
               <Link
                 href="/jobs"
@@ -436,40 +736,69 @@ export default function StudentDashboardPage() {
               </Link>
             </div>
 
-            <div className="space-y-4">
-              {candidate.applications.map((app) => (
-                <div
-                  key={app.id}
-                  className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded text-xs font-bold border ${app.statusColor}`}>
-                        {app.status}
-                      </span>
-                      <span className="text-xs font-medium text-slate-500">{app.city}</span>
+            {applicationsList.length > 0 ? (
+              <div className="space-y-4">
+                {applicationsList.map((app) => (
+                  <div
+                    key={app.id}
+                    className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-xs font-bold border ${getStatusBadgeColor(
+                            app.status,
+                          )}`}
+                        >
+                          {app.status}
+                        </span>
+                        <span className="text-xs font-medium text-slate-500">{app.city}</span>
+                      </div>
+                      <h3 className="text-base font-bold">{app.title}</h3>
+                      <p className="text-xs text-slate-500">{app.employer}</p>
                     </div>
-                    <h3 className="text-base font-bold">{app.title}</h3>
-                    <p className="text-xs text-slate-500">{app.employer}</p>
-                  </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-emerald-500 block">{app.stipend}</span>
-                      {app.interviewDate && (
-                        <span className="text-xs text-amber-500 font-medium">{app.interviewDate}</span>
-                      )}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-emerald-500 block">{app.stipend}</span>
+                        {app.interviewDate && (
+                          <span className="text-xs text-amber-500 font-medium">
+                            {formatDateShort(app.interviewDate)}
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href="/toolkit"
+                        className="px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        DIN 5008 CV
+                      </Link>
                     </div>
-                    <Link
-                      href="/toolkit"
-                      className="px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      DIN 5008 CV
-                    </Link>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
+                <p className="text-sm font-semibold">No Job Applications Yet</p>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Browse verified German Ausbildung listings or prepare your DIN 5008 CV in the Application Toolkit to start applying.
+                </p>
+                <div className="flex justify-center gap-3 pt-2">
+                  <Link
+                    href="/jobs"
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Browse Jobs
+                  </Link>
+                  <Link
+                    href="/toolkit"
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Open CV Builder
+                  </Link>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -479,7 +808,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">Vocational LMS & Certificates</h2>
-                <p className="text-xs text-slate-500">Specialist vocational training with verifiable digital certificate generation.</p>
+                <p className="text-xs text-slate-500">
+                  Specialist vocational training with verifiable digital certificate generation.
+                </p>
               </div>
               <Link
                 href="/courses"
@@ -489,27 +820,59 @@ export default function StudentDashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {candidate.courses.map((course) => (
-                <div key={course.id} className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-sm">{course.title}</h3>
-                    <span className="text-xs font-bold text-emerald-500">{course.progress}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${course.progress}%` }} />
-                  </div>
-                  {course.certificate ? (
-                    <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-xs space-y-1">
-                      <div className="font-bold text-emerald-600 dark:text-emerald-400">Certificate Verified: {course.certificate.code}</div>
-                      <div className="font-mono text-[10px] text-slate-500 break-all">{course.certificate.sha256}</div>
+            {coursesList.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {coursesList.map((course) => {
+                  const matchingCert = certificatesList.find((c) => c.courseTitle === course.title);
+                  return (
+                    <div
+                      key={course.id}
+                      className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-sm">{course.title}</h3>
+                        <span className="text-xs font-bold text-emerald-500">
+                          {course.progressPercentage}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-emerald-500 h-full rounded-full"
+                          style={{ width: `${course.progressPercentage}%` }}
+                        />
+                      </div>
+                      {matchingCert ? (
+                        <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-xs space-y-1">
+                          <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                            Certificate Verified: {matchingCert.verificationCode}
+                          </div>
+                          <div className="font-mono text-[10px] text-slate-500 break-all">
+                            {matchingCert.sha256Hash}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400">
+                          Complete remaining lessons to earn your verified PDF certificate.
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-xs text-slate-400">Complete remaining lessons to earn your verified PDF certificate.</p>
-                  )}
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
+                <p className="text-sm font-semibold">No Enrolled Courses Yet</p>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Enroll in specialized German nursing, IT, or workplace readiness courses to earn verified SHA-256 certificates.
+                </p>
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Explore Courses
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
@@ -519,7 +882,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">Speaking Tandem & Mock Interviews</h2>
-                <p className="text-xs text-slate-500">Live peer matchmaking with vocational dialog cue cards and rating reviews.</p>
+                <p className="text-xs text-slate-500">
+                  Live peer matchmaking with vocational dialog cue cards and rating reviews.
+                </p>
               </div>
               <Link
                 href="/speaking"
@@ -531,26 +896,33 @@ export default function StudentDashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 text-center space-y-2">
-                <div className="text-3xl font-black text-emerald-500">{candidate.speaking.avgStars} ★</div>
-                <div className="text-xs font-bold text-slate-600 dark:text-slate-400">Average Partner Rating</div>
-                <p className="text-xs text-slate-400">Based on 8 verified peer conversations</p>
+                <div className="text-3xl font-black text-emerald-500">{speakingAvgStars} ★</div>
+                <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                  Average Partner Rating
+                </div>
+                <p className="text-xs text-slate-400">
+                  Based on {speakingTotalCalls} verified peer conversation{speakingTotalCalls === 1 ? '' : 's'}
+                </p>
               </div>
 
               <div className="md:col-span-2 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 space-y-3">
-                <h3 className="font-bold text-sm">Earned Speaking Badges</h3>
-                <div className="flex flex-wrap gap-2">
-                  {candidate.speaking.receivedBadges.map((badge) => (
-                    <span
-                      key={badge}
-                      className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                    >
-                      🏆 {badge}
-                    </span>
-                  ))}
-                </div>
-                <div className="pt-2 text-xs text-slate-500">
-                  Last Partner: <span className="font-semibold text-slate-700 dark:text-slate-300">{candidate.speaking.recentPartner}</span>
-                </div>
+                <h3 className="font-bold text-sm">Earned Badges & Achievements</h3>
+                {unlockedBadges.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {unlockedBadges.map((badge, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      >
+                        🏆 {badge.badgeType}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Complete tandem speaking sessions and daily German quizzes to unlock achievement badges.
+                  </p>
+                )}
               </div>
             </div>
           </div>
