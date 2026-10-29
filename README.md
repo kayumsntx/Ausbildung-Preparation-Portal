@@ -112,12 +112,12 @@ npm run dev:api    # NestJS API application on http://localhost:4000
 - [x] **Phase 0:** Project Audit, Architecture & Invariants Completed.
 - [x] **Phase 1:** Foundation, Design System, and Public Website Completed.
 - [x] **Phase 2:** Database, Authentication, and User Security Completed.
-- [ ] **Phase 3:** Multilingual German Learning Platform *(Next Phase)*.
-- [ ] **Phase 4:** Live Ausbildung Job Search & Application Tracker.
-- [ ] **Phase 5:** Free and Paid Courses LMS.
-- [ ] **Phase 6:** CV, Cover Letter & Application Toolkit.
-- [ ] **Phase 7:** Speaking Partners & Audio/Video WebRTC Calls.
-- [ ] **Phase 8:** Coin Wallet, Rewards, Tasks & Referrals.
-- [ ] **Phase 9:** Unified Dashboards & Administration.
-- [ ] **Phase 10:** Security, Quality & Performance Hardening.
-- [ ] **Phase 11:** Deployment, Operations & Future Mobile App Readiness.
+- [x] **Phase 3:** Multilingual German Learning Platform *(Next Phase)*.
+- [x] **Phase 4:** Live Ausbildung Job Search & Application Tracker.
+- [x] **Phase 5:** Free and Paid Courses LMS.
+- [x] **Phase 6:** CV, Cover Letter & Application Toolkit.
+- [x] **Phase 7:** Speaking Partners & Audio/Video WebRTC Calls.
+- [x] **Phase 8:** Coin Wallet, Rewards, Tasks & Referrals.
+- [x] **Phase 9:** Unified Dashboards & Administration.
+- [x] **Phase 10:** Security, Quality & Performance Hardening.
+- [x] **Phase 11:** Deployment, Operations & Future Mobile App Readiness.
