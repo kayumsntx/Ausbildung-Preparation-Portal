@@ -28,15 +28,9 @@ export default function RegisterPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // Normalize API endpoint URL
-    const defaultBase =
-      typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-        ? 'https://ausbildung-preparation-portal.onrender.com/api/v1'
-        : 'http://localhost:4000/api/v1';
-    const rawBase = (process.env.NEXT_PUBLIC_API_URL || defaultBase).trim().replace(/\/+$/, '');
-    const apiUrl = rawBase.endsWith('/api/v1')
-      ? `${rawBase}/auth/register`
-      : `${rawBase}/api/v1/auth/register`;
+    // Use same-origin Next.js API proxy route (/api/v1/auth/register) so browser
+    // requests never fail due to cross-origin CORS preflight blocks.
+    const apiUrl = '/api/v1/auth/register';
 
     // Split name into first and optional last name
     const nameParts = formData.name.trim().split(/\s+/);
@@ -128,12 +122,20 @@ export default function RegisterPage() {
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div className="flex-1 space-y-2">
                 <p className="font-semibold leading-relaxed">{successMessage}</p>
-                <Link
-                  href="/auth/login"
-                  className="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400 underline hover:no-underline"
-                >
-                  Proceed to Sign In <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-4 pt-1">
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400 underline hover:no-underline"
+                  >
+                    Go to Dashboard <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href="/auth/login"
+                    className="inline-flex items-center gap-1 font-semibold text-emerald-700/80 dark:text-emerald-400/80 hover:underline"
+                  >
+                    Sign In
+                  </Link>
+                </div>
               </div>
             </div>
           )}

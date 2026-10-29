@@ -18,14 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    const defaultBase =
-      typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-        ? 'https://ausbildung-preparation-portal.onrender.com/api/v1'
-        : 'http://localhost:4000/api/v1';
-    const rawBase = (process.env.NEXT_PUBLIC_API_URL || defaultBase).trim().replace(/\/+$/, '');
-    const apiUrl = rawBase.endsWith('/api/v1')
-      ? `${rawBase}/auth/login`
-      : `${rawBase}/api/v1/auth/login`;
+    const apiUrl = '/api/v1/auth/login';
 
     try {
       const response = await fetch(apiUrl, {
